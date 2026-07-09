@@ -5,7 +5,7 @@
 //|                                       https://motionmind.store |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2026, MotionMind"
-#property version   "1.1"
+#property version   "1.2"
 #property strict
 
 #include <Trade\Trade.mqh>
@@ -23,6 +23,7 @@
 #include "Services\NewsService.mqh"
 #include "Services\TimeService.mqh"
 #include "Services\SymbolService.mqh"
+#include "Services\MarketMode.mqh"
 
 //+------------------------------------------------------------------+
 //| Global Trade Object                                             |
@@ -34,13 +35,19 @@ CTrade g_Trade;
 //+------------------------------------------------------------------+
 bool g_Initialized = false;
 bool g_ReadyToTrade = false;
-int g_PositionType = 0;  // 0=Buy, 1=Sell
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                  |
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   // Validate parameters first (fastest check)
+   if (!InitializeParameters())
+   {
+      Print("Error: Parameter validation failed");
+      return INIT_FAILED;
+   }
+   
    // Initialize symbol service
    if (!InitializeSymbolService())
    {
@@ -62,13 +69,6 @@ int OnInit()
       return INIT_FAILED;
    }
    
-   // Initialize parameters
-   if (!InitializeParameters())
-   {
-      Print("Error: Failed to initialize parameters");
-      return INIT_FAILED;
-   }
-   
    // Initialize trade context
    if (!InitializeTradeContext())
    {
@@ -76,7 +76,7 @@ int OnInit()
       return INIT_FAILED;
    }
    
-   // Initialize data cache
+   // Initialize data cache (per-timeframe)
    if (!InitializeDataCache())
    {
       Print("Error: Failed to initialize data cache");
@@ -102,6 +102,12 @@ int OnInit()
    {
       Print("Error: Failed to initialize ATR");
       return INIT_FAILED;
+   }
+   
+   // Initialize market mode detection
+   if (!InitializeMarketMode())
+   {
+      Print("Warning: Failed to initialize market mode detection - using fallback");
    }
    
    // Initialize risk service
@@ -143,8 +149,9 @@ int OnInit()
    g_Initialized = true;
    g_ReadyToTrade = true;
    
-   // Log initialization
-   Logger_Log(INIT, "EA Initialized Successfully");
+   // Log initialization with validation summary
+   Logger_Log(INIT, "EA Initialized Successfully | Risk=" + DoubleToString(g_Parameters.RiskPercent, 1) +
+              "% | SL=" + IntegerToString(g_Parameters.DefaultSL) + "pts | TP=" + IntegerToString(g_Parameters.DefaultTP) + "pts");
    
    return INIT_SUCCEEDED;
 }
@@ -160,8 +167,9 @@ void OnDeinit(const int reason)
    // Export metrics on close
    ExportMetrics();
    
-   // Cleanup ATR handle
+   // Cleanup handles
    CleanupATR();
+   CleanupMarketMode();
 }
 
 //+------------------------------------------------------------------+
@@ -174,7 +182,7 @@ void OnTick()
       return;
    
    // Update trade context (only on new bar to save resources)
-   if (!g_TradeContext.IsNewBar(PERIOD_M5))
+   if (!IsNewBar(PERIOD_M5))
       return;
    
    // Update trade context with fresh data
@@ -190,7 +198,10 @@ void OnTick()
       Logger_Log(WARNING, "Failed to update ATR");
    }
    
-   // Update data cache if new candle
+   // Update market mode detection (H1 ATR comparison)
+   CalculateMarketMode();
+   
+   // Update data cache (all timeframes: H1, M15, M5)
    if (!UpdateDataCache())
    {
       Logger_Log(ERROR, "Failed to update data cache");
@@ -232,21 +243,39 @@ void ExecuteTradingCycle()
       return;
    }
    
-   // Step 4: Calculate position size
-   double lotSize = CalculatePositionSize();
+   // Step 4: Calculate stop loss FIRST (swing-based SL)
+   double sl = CalculateStopLoss();
+   double tp = CalculateTakeProfit(sl);
+   
+   if (sl <= 0)
+   {
+      Logger_Log(ERROR, "Failed to calculate stop loss");
+      return;
+   }
+   
+   // Step 5: Calculate position size based on ACTUAL SL distance
+   // Cache repeated symbol info calls
+   double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double slDistancePoints = MathAbs(currentPrice - sl) / point;
+   
+   double lotSize = CalculatePositionSizeFromSL(slDistancePoints);
    if (lotSize <= 0)
    {
       Logger_Log(ERROR, "Failed to calculate position size");
       return;
    }
    
-   // Step 5: Calculate stop loss and take profit
-   double sl = CalculateStopLoss();
-   double tp = CalculateTakeProfit();
-   
-   // Step 6: Execute order
+   // Step 6: Execute order using Execution module (with retry logic)
    int direction = g_TradeContext.CurrentTrend;
-   if (!ExecuteTrade(direction, lotSize, sl, tp))
+   bool executed = false;
+   
+   if (direction == DIRECTION_BUY)
+      executed = ExecuteBuy(lotSize, sl, tp, "SMC Scalper Pro");
+   else if (direction == DIRECTION_SELL)
+      executed = ExecuteSell(lotSize, sl, tp, "SMC Scalper Pro");
+   
+   if (!executed)
    {
       Logger_Log(ERROR, "Failed to execute trade");
       return;
@@ -257,35 +286,36 @@ void ExecuteTradingCycle()
    
    // Step 8: Log success
    Logger_Log(INFO, "Trade opened. Direction: " + IntegerToString(direction) + 
-              ", Score: " + IntegerToString(entryDecision.ConfidenceScore));
+              ", Lot: " + DoubleToString(lotSize, 2) +
+              ", Score: " + IntegerToString(entryDecision.ConfidenceScore) +
+              ", Mode: " + GetMarketModeString());
 }
 
 //+------------------------------------------------------------------+
-//| Calculate position size                                         |
+//| Calculate position size based on actual SL distance              |
 //+------------------------------------------------------------------+
-double CalculatePositionSize()
+double CalculatePositionSizeFromSL(double slDistancePoints)
 {
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
-   double riskAmount = balance * g_Parameters.RiskPercent / 100;
+   double riskAmount = balance * g_Parameters.RiskPercent / 100.0;
    
-   // Get ATR buffer for SL calculation (in price units)
-   double atrBuffer = GetATRBuffer();
+   // Avoid division by zero
+   if (slDistancePoints <= 0)
+      return 0.0;
    
-   // Calculate SL distance in points
-   // DefaultSL is in points, atrBuffer is in price units
-   // Convert atrBuffer to points: atrBuffer / _Point
-   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-   double slDistancePoints = g_Parameters.DefaultSL + (atrBuffer / point);
-   
-   // Calculate lot size
+   // Calculate lot size using actual SL distance
    double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   if (tickValue <= 0)
+      return 0.0;
+   
    double lotSize = riskAmount / (slDistancePoints * tickValue);
    
    // Normalize lot size
    lotSize = NormalizeLot(lotSize);
    
    // Validate margin
-   double requiredMargin = lotSize * SymbolInfoDouble(_Symbol, SYMBOL_MARGIN_REQUIRED);
+   double marginRequired = SymbolInfoDouble(_Symbol, SYMBOL_MARGIN_REQUIRED);
+   double requiredMargin = lotSize * marginRequired;
    if (!g_TradeContext.HasSufficientMargin(requiredMargin))
    {
       Logger_Log(WARNING, "Insufficient margin for calculated lot size");
@@ -309,7 +339,7 @@ double CalculateStopLoss()
       // For buy: SL below nearest swing low
       double swingLow = GetNearestSwingLow(currentPrice);
       if (swingLow > 0)
-         sl = swingLow - GetATRBuffer();  // ATR buffer already in price units
+         sl = swingLow - GetATRBuffer();
       else
          sl = currentPrice - g_Parameters.DefaultSL * point;
    }
@@ -318,7 +348,7 @@ double CalculateStopLoss()
       // For sell: SL above nearest swing high
       double swingHigh = GetNearestSwingHigh(currentPrice);
       if (swingHigh > 0)
-         sl = swingHigh + GetATRBuffer();  // ATR buffer already in price units
+         sl = swingHigh + GetATRBuffer();
       else
          sl = currentPrice + g_Parameters.DefaultSL * point;
    }
@@ -331,45 +361,26 @@ double CalculateStopLoss()
 //+------------------------------------------------------------------+
 //| Calculate take profit                                           |
 //+------------------------------------------------------------------+
-double CalculateTakeProfit()
+double CalculateTakeProfit(double sl)
 {
    double tp = 0.0;
-   double sl = CalculateStopLoss();
    double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    
    // Calculate SL distance in points
-   double slDistance = MathAbs(currentPrice - sl) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double slDistance = MathAbs(currentPrice - sl) / point;
    
    // Calculate TP distance (1.5x to 2x SL)
    double tpDistance = slDistance * 1.5;
    
    // Normalize TP
    if (g_TradeContext.CurrentTrend == DIRECTION_BUY)
-      tp = currentPrice + tpDistance * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      tp = currentPrice + tpDistance * point;
    else
-      tp = currentPrice - tpDistance * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      tp = currentPrice - tpDistance * point;
    
    tp = NormalizePrice(tp);
    return tp;
-}
-
-//+------------------------------------------------------------------+
-//| Execute trade order                                             |
-//+------------------------------------------------------------------+
-bool ExecuteTrade(int direction, double lotSize, double sl, double tp)
-{
-   if (direction == DIRECTION_BUY)
-   {
-      return g_Trade.Buy(lotSize, _Symbol, SymbolInfoDouble(_Symbol, SYMBOL_ASK), sl, tp, 
-                        "SMC Scalper Pro", g_Parameters.MagicNumber);
-   }
-   else if (direction == DIRECTION_SELL)
-   {
-      return g_Trade.Sell(lotSize, _Symbol, SymbolInfoDouble(_Symbol, SYMBOL_BID), sl, tp,
-                         "SMC Scalper Pro", g_Parameters.MagicNumber);
-   }
-   
-   return false;
 }
 
 //+------------------------------------------------------------------+
@@ -422,10 +433,7 @@ void ExportMetrics()
 //+------------------------------------------------------------------+
 double NormalizePrice(double price)
 {
-   return MathRound(price / SymbolInfoDouble(_Symbol, SYMBOL_POINT)) * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   return MathRound(price / point) * point;
 }
-
-//+------------------------------------------------------------------+
-//| Note: GetATRBuffer() is defined in Core\ATR.mqh and returns      |
-//| g_ATR_Buffer * g_ATR_14. Use that function instead of redefining.|
 //+------------------------------------------------------------------+

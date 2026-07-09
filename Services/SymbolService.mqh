@@ -314,11 +314,5 @@ bool IsSymbolTradeAllowed()
    return g_SymbolService.IsSymbolTradeAllowed();
 }
 
-//+------------------------------------------------------------------+
-//| Normalize lot (wrapper)                                         |
-//+------------------------------------------------------------------+
-double NormalizeLot(double lotSize)
-{
-   return g_SymbolService.NormalizeLot(lotSize);
-}
+
 //+------------------------------------------------------------------+

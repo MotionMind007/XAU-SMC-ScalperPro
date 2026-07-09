@@ -1,11 +1,11 @@
 //+------------------------------------------------------------------+
 //|                                                      NewsService.mqh |
 //|                        XAU SMC Scalper Pro - Services Module |
-//|                           Copyright 2024, MotionMind |
-//|                                       https://motionmind.com |
+//|                           Copyright 2026, MotionMind |
+//|                                       https://motionmind.store |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, MotionMind"
-#property version   "1.1"
+#property copyright "Copyright 2026, MotionMind"
+#property version   "1.2"
 #property strict
 
 #include <datetime\Time.mqh>
@@ -84,7 +84,7 @@ public:
       // Try to load events from file
       if (!this.LoadEvents())
       {
-         // If file doesn't exist, use defaults
+         // If file doesn't exist, use hardcoded defaults
          this.LoadDefaultEvents();
       }
       
@@ -135,45 +135,124 @@ public:
    }
    
    //+------------------------------------------------------------------+
-   //| Load default events                                            |
+   //| Load hardcoded default events for XAUUSD                       |
+   //| Generates events for the next 12 months                        |
    //+------------------------------------------------------------------+
    bool LoadDefaultEvents()
    {
       // Clear existing events
       ArrayResize(this.m_HighImpactEvents, 0);
       
-      // Add default high impact events
       datetime now = TimeCurrent();
+      MqlDateTime nowStruct;
+      TimeToStruct(now, nowStruct);
       
-      // NFP (First Friday of each month)
-      for (int i = 0; i < 12; i++)
+      int currentYear = nowStruct.year;
+      int currentMonth = nowStruct.month;
+      
+      // 20:30 WIB = 13:30 UTC (WIB is UTC+7)
+      int eventHour = 13;
+      int eventMinute = 30;
+      
+      // FOMC announcement: 02:00 WIB next day = 19:00 UTC previous day
+      int fomcHour = 19;
+      int fomcMinute = 0;
+      
+      // Generate events for next 12 months
+      for (int m = 0; m < 12; m++)
       {
-         NewsEvent ne;
-         ne.EventTime = this.GetFirstFridayOfMonth(TimeYear(now), TimeMonth(now) + i);
-         ne.EventType = NEWS_HIGH_IMPACT;
-         ne.Country = "US";
-         ne.EventName = "NFP";
-         ne.ImpactMinutesBefore = 30;
-         ne.ImpactMinutesAfter = 30;
-         ArrayResize(this.m_HighImpactEvents, ArraySize(this.m_HighImpactEvents) + 1);
-         this.m_HighImpactEvents[ArraySize(this.m_HighImpactEvents) - 1] = ne;
+         int targetMonth = currentMonth + m;
+         int targetYear = currentYear;
+         while (targetMonth > 12)
+         {
+            targetMonth -= 12;
+            targetYear++;
+         }
+         
+         // === NFP (Non-Farm Payrolls) - First Friday of month ===
+         datetime nfpDate = GetFirstFridayOfMonth(targetYear, targetMonth);
+         datetime nfpTime = SetTimeOnDate(nfpDate, eventHour, eventMinute);
+         AddEvent(nfpTime, NEWS_HIGH_IMPACT, "US", "NFP", 30, 30);
+         
+         // === CPI (Consumer Price Index) - ~12th of month ===
+         datetime cpiDate = SetDayOnMonth(targetYear, targetMonth, 12);
+         datetime cpiTime = SetTimeOnDate(cpiDate, eventHour, eventMinute);
+         AddEvent(cpiTime, NEWS_HIGH_IMPACT, "US", "CPI", 30, 30);
+         
+         // === PPI (Producer Price Index) - ~15th of month ===
+         datetime ppiDate = SetDayOnMonth(targetYear, targetMonth, 15);
+         datetime ppiTime = SetTimeOnDate(ppiDate, eventHour, eventMinute);
+         AddEvent(ppiTime, NEWS_HIGH_IMPACT, "US", "PPI", 30, 30);
+         
+         // === Unemployment Claims - First Thursday of month (day before NFP) ===
+         datetime unempDate = GetFirstThursdayOfMonth(targetYear, targetMonth);
+         datetime unempTime = SetTimeOnDate(unempDate, eventHour, eventMinute);
+         AddEvent(unempTime, NEWS_HIGH_IMPACT, "US", "Unemployment", 30, 30);
+         
+         // === GDP - Quarterly (Jan, Apr, Jul, Oct) - ~28th of month ===
+         if (targetMonth == 1 || targetMonth == 4 || targetMonth == 7 || targetMonth == 10)
+         {
+            datetime gdpDate = SetDayOnMonth(targetYear, targetMonth, 28);
+            datetime gdpTime = SetTimeOnDate(gdpDate, eventHour, eventMinute);
+            AddEvent(gdpTime, NEWS_HIGH_IMPACT, "US", "GDP", 30, 30);
+         }
       }
       
-      // FOMC (8 times per year)
+      // === FOMC (Federal Open Market Committee) ===
+      // 8 meetings per year, announced on Wednesdays
+      // Approximate 2026 dates (second or fourth Wednesday of meeting months)
+      // Standard FOMC months: Jan, Mar, May, Jun, Jul, Sep, Nov, Dec
+      int fomcMonths[];
+      int fomcDays[];
+      ArrayResize(fomcMonths, 8);
+      ArrayResize(fomcDays, 8);
+      
+      // 2026 approximate FOMC announcement dates (Wednesdays)
+      fomcMonths[0] = 1;  fomcDays[0] = 28;   // Jan 28
+      fomcMonths[1] = 3;  fomcDays[1] = 18;   // Mar 18
+      fomcMonths[2] = 5;  fomcDays[2] = 6;    // May 6
+      fomcMonths[3] = 6;  fomcDays[3] = 17;   // Jun 17
+      fomcMonths[4] = 7;  fomcDays[4] = 29;   // Jul 29
+      fomcMonths[5] = 9;  fomcDays[5] = 16;   // Sep 16
+      fomcMonths[6] = 11; fomcDays[6] = 4;    // Nov 4
+      fomcMonths[7] = 12; fomcDays[7] = 9;    // Dec 9
+      
       for (int i = 0; i < 8; i++)
       {
-         NewsEvent ne;
-         ne.EventTime = now + i * 30 * 24 * 60 * 60;  // Every 30 days
-         ne.EventType = NEWS_HIGH_IMPACT;
-         ne.Country = "US";
-         ne.EventName = "FOMC";
-         ne.ImpactMinutesBefore = 30;
-         ne.ImpactMinutesAfter = 30;
-         ArrayResize(this.m_HighImpactEvents, ArraySize(this.m_HighImpactEvents) + 1);
-         this.m_HighImpactEvents[ArraySize(this.m_HighImpactEvents) - 1] = ne;
+         datetime fomcDate = StringToTime(
+            IntegerToString(fomcMonths[i] < 10 ? "0" : "") + IntegerToString(fomcMonths[i]) + "." +
+            IntegerToString(fomcDays[i] < 10 ? "0" : "") + IntegerToString(fomcDays[i]) + "." +
+            IntegerToString(currentYear));
+         
+         datetime fomcTime = SetTimeOnDate(fomcDate, fomcHour, fomcMinute);
+         
+         // Only add if in the future (within next 12 months)
+         if (fomcTime > now && fomcTime < now + 365 * 24 * 60 * 60)
+         {
+            AddEvent(fomcTime, NEWS_HIGH_IMPACT, "US", "FOMC", 30, 30);
+         }
       }
       
       return true;
+   }
+   
+   //+------------------------------------------------------------------+
+   //| Add event to the array                                         |
+   //+------------------------------------------------------------------+
+   void AddEvent(datetime eventTime, NewsEventType type, string country, 
+                 string name, int beforeMin, int afterMin)
+   {
+      NewsEvent ne;
+      ne.EventTime = eventTime;
+      ne.EventType = type;
+      ne.Country = country;
+      ne.EventName = name;
+      ne.ImpactMinutesBefore = beforeMin;
+      ne.ImpactMinutesAfter = afterMin;
+      
+      int size = ArraySize(this.m_HighImpactEvents);
+      ArrayResize(this.m_HighImpactEvents, size + 1);
+      this.m_HighImpactEvents[size] = ne;
    }
    
    //+------------------------------------------------------------------+
@@ -190,6 +269,56 @@ public:
          daysToAdd += 7;
       
       return date + daysToAdd * 24 * 60 * 60;
+   }
+   
+   //+------------------------------------------------------------------+
+   //| Get first Thursday of a specific month                         |
+   //+------------------------------------------------------------------+
+   datetime GetFirstThursdayOfMonth(int year, int month)
+   {
+      datetime date = StringToTime(IntegerToString(year) + "." + IntegerToString(month) + ".01");
+      MqlDateTime md;
+      TimeToStruct(date, md);
+      
+      int daysToAdd = 4 - md.day_of_week;
+      if (daysToAdd < 0)
+         daysToAdd += 7;
+      
+      return date + daysToAdd * 24 * 60 * 60;
+   }
+   
+   //+------------------------------------------------------------------+
+   //| Set a specific day on a month, clamping to valid days          |
+   //+------------------------------------------------------------------+
+   datetime SetDayOnMonth(int year, int month, int day)
+   {
+      // Get max days in month
+      datetime nextMonth;
+      if (month == 12)
+         nextMonth = StringToTime(IntegerToString(year + 1) + ".01.01");
+      else
+         nextMonth = StringToTime(IntegerToString(year) + "." + IntegerToString(month + 1) + ".01");
+      
+      datetime thisMonth = StringToTime(IntegerToString(year) + "." + IntegerToString(month) + ".01");
+      int maxDays = (int)((nextMonth - thisMonth) / (24 * 60 * 60));
+      
+      if (day > maxDays)
+         day = maxDays;
+      
+      return thisMonth + (day - 1) * 24 * 60 * 60;
+   }
+   
+   //+------------------------------------------------------------------+
+   //| Set time on a given date                                       |
+   //+------------------------------------------------------------------+
+   datetime SetTimeOnDate(datetime date, int hour, int minute)
+   {
+      MqlDateTime dt;
+      TimeToStruct(date, dt);
+      dt.hour = hour;
+      dt.min = minute;
+      dt.sec = 0;
+      return StructToTime(dt);
    }
    
    //+------------------------------------------------------------------+
@@ -256,7 +385,7 @@ public:
    }
    
    //+------------------------------------------------------------------+
-   //| Get time until next news event                                 |
+   //| Get time until next news event (in minutes)                   |
    //+------------------------------------------------------------------+
    int GetTimeUntilNextNews()
    {

@@ -12,7 +12,7 @@
 #include <stderror.mqh>
 #include "Config\Parameters.mqh"
 #include "TradeContext.mqh"
-#include "SymbolService.mqh"
+#include "../Services/SymbolService.mqh"
 #include "Logger.mqh"
 
 //+------------------------------------------------------------------+

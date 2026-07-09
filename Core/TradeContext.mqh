@@ -8,14 +8,17 @@
 #property version   "1.1"
 #property strict
 
+input int InpSwingLookback = 20;  // H1 swing lookback for trend detection
+
 #include <stderror.mqh>
-#include "Models\Swing.mqh"
-#include "Models\OrderBlockModel.mqh"
-#include "Models\LiquidityModel.mqh"
-#include "Models\ScoreModel.mqh"
-#include "Config\Parameters.mqh"
-#include "Core\Session.mqh"
-#include "Services\NewsService.mqh"
+#include "Models\\Swing.mqh"
+#include "Models\\OrderBlockModel.mqh"
+#include "Models\\LiquidityModel.mqh"
+#include "Models\\ScoreModel.mqh"
+#include "Config\\Parameters.mqh"
+#include "Core\\Session.mqh"
+#include "Services\\NewsService.mqh"
+#include "Services\\MarketMode.mqh"
 
 //+------------------------------------------------------------------+
 //| Market State Enumeration                                         |
@@ -201,10 +204,12 @@ struct TradeContext
    }
    
    //+------------------------------------------------------------------+
+   //| Update daily profit and loss metrics (separate wins/losses)     |
+   //+------------------------------------------------------------------+
    bool UpdateDailyMetrics()
    {
       datetime now = TimeCurrent();
-      datetime todayStart = StringToTime(TimeToString(now, TIME_DATE));
+      datetime dayStart = StringToTime(TimeToString(now, TIME_DATE));
       
       if (this.BalanceAtDayStart == 0 || 
           TimeYear(now) != TimeYear(this.LastUpdate) ||
@@ -216,25 +221,41 @@ struct TradeContext
          this.TradesToday = 0;
       }
       
-      double currentBalance = AccountInfoDouble(ACCOUNT_BALANCE);
-      double totalHistoryProfit = 0.0;
+      double totalWins = 0.0;
+      double totalLosses = 0.0;
       int tradeCount = 0;
       
-      for (int i = OrdersHistoryTotal() - 1; i >= 0; i--)
+      if (HistorySelect(dayStart, TimeCurrent()))
       {
-         if (OrderSelect(i, SELECT_BY_POS, MODE_HISTORY))
+         int totalDeals = HistoryDealsTotal();
+         for (int i = 0; i < totalDeals; i++)
          {
-            if (OrderCloseTime() >= todayStart && 
-                OrderMagicNumber() == g_Parameters.MagicNumber)
-            {
-               totalHistoryProfit += OrderProfit() + OrderSwap() + OrderCommission();
-               tradeCount++;
-            }
+            ulong ticket = HistoryDealGetTicket(i);
+            if (ticket == 0) continue;
+            
+            // Only count closed deals (out) for our symbol and magic
+            if (HistoryDealGetInteger(ticket, DEAL_ENTRY) != DEAL_ENTRY_OUT)
+               continue;
+            if (HistoryDealGetString(ticket, DEAL_SYMBOL) != _Symbol)
+               continue;
+            if (HistoryDealGetInteger(ticket, DEAL_MAGIC) != g_Parameters.MagicNumber)
+               continue;
+            
+            double dealProfit = HistoryDealGetDouble(ticket, DEAL_PROFIT)
+                              + HistoryDealGetDouble(ticket, DEAL_SWAP)
+                              + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+            
+            if (dealProfit > 0)
+               totalWins += dealProfit;
+            else
+               totalLosses += MathAbs(dealProfit);
+            
+            tradeCount++;
          }
       }
       
-      this.DailyProfit = MathMax(0, totalHistoryProfit);
-      this.DailyLoss = MathMax(0, -totalHistoryProfit);
+      this.DailyProfit = totalWins;
+      this.DailyLoss = totalLosses;
       this.TradesToday = tradeCount;
       
       return true;
@@ -338,11 +359,14 @@ bool UpdateTradeContext()
    g_TradeContext.SessionActive = IsSessionActive(g_TradeContext.Session);
    g_TradeContext.NewsActive = IsNewsActive();
    g_TradeContext.CurrentSpread = SymbolInfoDouble(_Symbol, SYMBOL_SPREAD);
-   g_TradeContext.SpreadRatio = g_TradeContext.CurrentSpread / (g_Parameters.DefaultSL * _Point) * 100;
+   g_TradeContext.SpreadRatio = g_TradeContext.CurrentSpread / g_Parameters.DefaultSL * 100;
    if (!UpdateATR()) g_TradeContext.AddError("ATR update failed");
    
    // Detect trend based on H1 structure
    DetectTrend();
+   
+   // Detect price action patterns on M5
+   DetectPriceAction();
    
    return true;
 }
@@ -366,7 +390,7 @@ void DetectTrend()
    ArrayResize(recentLows, 0);
    
    // Use a simple swing detection (fractal-like)
-   int lookback = 20;  // Look at last 20 H1 bars
+   int lookback = InpSwingLookback;  // Use configurable lookback for H1 bars
    int swingPeriod = 3; // 3 bars on each side for swing detection
    
    for (int i = swingPeriod; i < lookback - swingPeriod && i < ArraySize(g_TradeContext.H1Rates) - swingPeriod; i++)
@@ -438,6 +462,151 @@ void DetectTrend()
 }
 
 //+------------------------------------------------------------------+
+//| Detect price action patterns from M5 candles                     |
+//+------------------------------------------------------------------+
+void DetectPriceAction()
+{
+   g_TradeContext.LastPriceAction = PA_NONE;
+   
+   if (ArraySize(g_TradeContext.M5Rates) < 7)
+      return;
+   
+   // Use index 1 (previous closed candle) and 2 (one before that)
+   // M5Rates are set as series, so [0]=current, [1]=previous, etc.
+   int curr = 1;
+   int prev = 2;
+   
+   double currOpen  = g_TradeContext.M5Rates[curr].open;
+   double currClose = g_TradeContext.M5Rates[curr].close;
+   double currHigh  = g_TradeContext.M5Rates[curr].high;
+   double currLow   = g_TradeContext.M5Rates[curr].low;
+   
+   double prevOpen  = g_TradeContext.M5Rates[prev].open;
+   double prevClose = g_TradeContext.M5Rates[prev].close;
+   double prevHigh  = g_TradeContext.M5Rates[prev].high;
+   double prevLow   = g_TradeContext.M5Rates[prev].low;
+   
+   double currBody = MathAbs(currClose - currOpen);
+   double prevBody = MathAbs(prevClose - prevOpen);
+   double currRange = currHigh - currLow;
+   double prevRange = prevHigh - prevLow;
+   
+   bool currBullish = (currClose > currOpen);
+   bool currBearish = (currClose < currOpen);
+   bool prevBullish = (prevClose > prevOpen);
+   bool prevBearish = (prevClose < prevOpen);
+   
+   // --- Bullish Engulfing ---
+   if (prevBearish && currBullish && currRange > prevRange &&
+       currOpen <= prevClose && currClose >= prevOpen)
+   {
+      g_TradeContext.LastPriceAction = PA_BULLISH_ENGULFING;
+      g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+      return;
+   }
+   
+   // --- Bearish Engulfing ---
+   if (prevBullish && currBearish && currRange > prevRange &&
+       currOpen >= prevClose && currClose <= prevOpen)
+   {
+      g_TradeContext.LastPriceAction = PA_BEARISH_ENGULFING;
+      g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+      return;
+   }
+   
+   // --- Pin Bar ---
+   double currUpperWick = currHigh - MathMax(currOpen, currClose);
+   double currLowerWick = MathMin(currOpen, currClose) - currLow;
+   
+   if (currBody > 0)
+   {
+      // Bullish pin bar: long lower wick (>2x body), small body near high
+      if (currLowerWick > 2.0 * currBody && currUpperWick < currBody * 0.5)
+      {
+         g_TradeContext.LastPriceAction = PA_BULLISH_PIN_BAR;
+         g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+         return;
+      }
+      // Bearish pin bar: long upper wick (>2x body), small body near low
+      if (currUpperWick > 2.0 * currBody && currLowerWick < currBody * 0.5)
+      {
+         g_TradeContext.LastPriceAction = PA_BEARISH_PIN_BAR;
+         g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+         return;
+      }
+   }
+   
+   // --- Rejection (wick > 60% of candle range) ---
+   if (currRange > 0)
+   {
+      if (currLowerWick / currRange > 0.60)
+      {
+         g_TradeContext.LastPriceAction = PA_BULLISH_REJECTION;
+         g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+         return;
+      }
+      if (currUpperWick / currRange > 0.60)
+      {
+         g_TradeContext.LastPriceAction = PA_BEARISH_REJECTION;
+         g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+         return;
+      }
+   }
+   
+   // --- Momentum (current body > 2x average body of last 5 candles) ---
+   double avgBody = 0.0;
+   for (int i = 2; i <= 6 && i < ArraySize(g_TradeContext.M5Rates); i++)
+   {
+      avgBody += MathAbs(g_TradeContext.M5Rates[i].close - g_TradeContext.M5Rates[i].open);
+   }
+   avgBody /= 5.0;
+   
+   if (currBody > 2.0 * avgBody && avgBody > 0)
+   {
+      if (currBullish)
+      {
+         g_TradeContext.LastPriceAction = PA_BULLISH_MOMENTUM;
+         g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+         return;
+      }
+      else if (currBearish)
+      {
+         g_TradeContext.LastPriceAction = PA_BEARISH_MOMENTUM;
+         g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+         return;
+      }
+   }
+   
+   // --- Inside Bar Break ---
+   // prev candle contained within candle before it
+   int before_prev = 3;
+   if (before_prev < ArraySize(g_TradeContext.M5Rates))
+   {
+      double beforeHigh = g_TradeContext.M5Rates[before_prev].high;
+      double beforeLow  = g_TradeContext.M5Rates[before_prev].low;
+      
+      bool isInsideBar = (prevHigh <= beforeHigh && prevLow >= beforeLow);
+      
+      if (isInsideBar)
+      {
+         // Current candle breaks prev high or low
+         if (currClose > prevHigh)
+         {
+            g_TradeContext.LastPriceAction = PA_INSIDE_BAR_BREAKEOUT;
+            g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+            return;
+         }
+         if (currClose < prevLow)
+         {
+            g_TradeContext.LastPriceAction = PA_INSIDE_BAR_BREAKEOUT;
+            g_TradeContext.LastPriceActionTime = g_TradeContext.M5Rates[curr].time;
+            return;
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
 bool CopyMarketData()
 {
    int ratesCount = 200;
@@ -453,31 +622,7 @@ bool CopyMarketData()
    return true;
 }
 
-//+------------------------------------------------------------------+
-bool IsNewBar(int timeframe)
-{
-   datetime currentBar = iTime(_Symbol, timeframe, 0);
-   datetime lastBar = 0;
-   
-   switch (timeframe)
-   {
-      case PERIOD_M5: lastBar = g_TradeContext.M5LastBar; break;
-      case PERIOD_M15: lastBar = g_TradeContext.M15LastBar; break;
-      case PERIOD_H1: lastBar = g_TradeContext.H1LastBar; break;
-   }
-   
-   if (currentBar != lastBar)
-   {
-      switch (timeframe)
-      {
-         case PERIOD_M5: g_TradeContext.M5LastBar = currentBar; break;
-         case PERIOD_M15: g_TradeContext.M15LastBar = currentBar; break;
-         case PERIOD_H1: g_TradeContext.H1LastBar = currentBar; break;
-      }
-      return true;
-   }
-   return false;
-}
+
 
 //+------------------------------------------------------------------+
 string TradeContextToString()

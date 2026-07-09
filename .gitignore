@@ -1,16 +1,67 @@
-# Ignore markdown documentation files
-*.md
+# ====================================================================
+# XAU SMC Scalper Pro — .gitignore
+# MQL5 / MetaTrader 5 specific ignore rules
+# ====================================================================
 
-# Ignore MetaTrader build artifacts
+# --- Compiled Files ---
 *.ex5
-*.log
+*.ex4
 
-# Ignore IDE files
-.kiro/
+# --- Log Files ---
+*.log
+Logs/
+
+# --- Backup Files ---
+*.bak
+*.orig
+*.old
+
+# --- Temporary Files ---
+*.tmp
+*.temp
+
+# --- MetaTrader Tester Data ---
+tester/
+tester_cache/
+
+# --- Reports (generated at runtime) ---
+Reports/
+
+# --- News Events (user-specific) ---
+NewsEvents.csv
+
+# --- OS Generated ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+._*
+
+# --- IDE / Editor ---
 .vscode/
+.idea/
 *.swp
 *.swo
+*~
+.project
+.settings/
 
-# Ignore user-specific config
-*.user
-*.cache
+# --- Windows ---
+*.exe
+*.dll
+
+# --- Build Artifacts ---
+build/
+obj/
+
+# --- Python (if tooling scripts added later) ---
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+
+# --- Node (if tooling scripts added later) ---
+node_modules/
+package-lock.json

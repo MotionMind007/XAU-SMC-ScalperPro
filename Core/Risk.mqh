@@ -114,13 +114,7 @@ RiskResult CalculateRiskReward()
    return result;
 }
 
-//+------------------------------------------------------------------+
-//| Normalize lot size - delegates to SymbolService                 |
-//+------------------------------------------------------------------+
-double NormalizeLot(double lotSize)
-{
-   return g_SymbolService.NormalizeLot(lotSize);
-}
+
 
 //+------------------------------------------------------------------+
 //| Check if margin is sufficient                                   |
