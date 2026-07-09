@@ -236,6 +236,28 @@ void ExecuteTradingCycle()
       return;
    }
    
+   // Step 2b: Check max concurrent positions
+   // Count actual open positions from the terminal
+   int openPositionCount = 0;
+   for (int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if (ticket == 0) continue;
+      
+      if (PositionGetString(POSITION_SYMBOL) == _Symbol &&
+          PositionGetInteger(POSITION_MAGIC) == g_Parameters.MagicNumber)
+      {
+         openPositionCount++;
+      }
+   }
+   
+   if (openPositionCount >= g_Parameters.MaxOpenPositions)
+   {
+      Logger_Log(DEBUG, "Max open positions reached (" + IntegerToString(openPositionCount) + 
+                 "/" + IntegerToString(g_Parameters.MaxOpenPositions) + ")");
+      return;
+   }
+   
    // Step 3: Check for existing positions
    if (g_TradeContext.ActiveTrades >= g_Parameters.MaxTradesPerDay)
    {
@@ -259,7 +281,13 @@ void ExecuteTradingCycle()
    double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double slDistancePoints = MathAbs(currentPrice - sl) / point;
    
-   double lotSize = CalculatePositionSizeFromSL(slDistancePoints);
+   // Apply half risk for scores below 85
+   double riskMultiplier = entryDecision.HalfRisk ? 0.5 : 1.0;
+   if (entryDecision.HalfRisk)
+      Logger_Log(DEBUG, "Half risk mode - score below 85 (Score: " + 
+                 IntegerToString(entryDecision.ConfidenceScore) + ")");
+   
+   double lotSize = CalculatePositionSizeFromSL(slDistancePoints, riskMultiplier);
    if (lotSize <= 0)
    {
       Logger_Log(ERROR, "Failed to calculate position size");
@@ -294,10 +322,13 @@ void ExecuteTradingCycle()
 //+------------------------------------------------------------------+
 //| Calculate position size based on actual SL distance              |
 //+------------------------------------------------------------------+
-double CalculatePositionSizeFromSL(double slDistancePoints)
+double CalculatePositionSizeFromSL(double slDistancePoints, double riskMultiplier = 1.0)
 {
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * g_Parameters.RiskPercent / 100.0;
+   
+   // Apply risk multiplier (0.5 for half risk mode)
+   riskAmount *= riskMultiplier;
    
    // Avoid division by zero
    if (slDistancePoints <= 0)

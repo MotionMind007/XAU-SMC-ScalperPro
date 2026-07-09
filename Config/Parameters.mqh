@@ -16,6 +16,7 @@ input double InputRiskPercent = 0.5;        // Risk per trade (%) [0.1-5.0]
 input int InputDailyLossLimit = 3;          // Daily loss limit (%) [1-10]
 input int InputDailyProfitTarget = 2;       // Daily profit target (%) [1-10]
 input int InputMaxTradesPerDay = 5;         // Max trades per day [1-20]
+input int InputMaxOpenPositions = 2;         // Max concurrent positions [1-5]
 input int InputMagicNumber = 20240701;      // Magic number
 
 input group "=== Timeframe Parameters ==="
@@ -52,6 +53,7 @@ struct Parameters
    int DailyLossLimit;
    int DailyProfitTarget;
    int MaxTradesPerDay;
+   int MaxOpenPositions;
    int MagicNumber;
    
    int SwingLookback;
@@ -84,6 +86,7 @@ struct Parameters
       this.DailyLossLimit = InputDailyLossLimit;
       this.DailyProfitTarget = InputDailyProfitTarget;
       this.MaxTradesPerDay = InputMaxTradesPerDay;
+      this.MaxOpenPositions = InputMaxOpenPositions;
       this.MagicNumber = InputMagicNumber;
       
       this.SwingLookback = InputSwingLookback;
@@ -117,6 +120,7 @@ struct Parameters
       this.DailyLossLimit = InputDailyLossLimit;
       this.DailyProfitTarget = InputDailyProfitTarget;
       this.MaxTradesPerDay = InputMaxTradesPerDay;
+      this.MaxOpenPositions = InputMaxOpenPositions;
       this.MagicNumber = InputMagicNumber;
       
       this.SwingLookback = InputSwingLookback;
@@ -196,6 +200,10 @@ bool ValidateParameters()
    
    // MaxTradesPerDay: 1-20
    if (!ValidateRangeInt(g_Parameters.MaxTradesPerDay, 1, 20, "MaxTradesPerDay"))
+      allValid = false;
+   
+   // MaxOpenPositions: 1-5
+   if (!ValidateRangeInt(g_Parameters.MaxOpenPositions, 1, 5, "MaxOpenPositions"))
       allValid = false;
    
    // MinConfidenceScore: 50-100

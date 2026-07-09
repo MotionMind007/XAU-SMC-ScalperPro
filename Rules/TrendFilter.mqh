@@ -42,19 +42,45 @@ public:
    //+------------------------------------------------------------------+
    bool Check()
    {
-      // Get trend from TradeContext
-      int currentTrend = g_TradeContext.CurrentTrend;
+      // Get trends from TradeContext
+      int h1Trend = g_TradeContext.CurrentTrend;
+      int m15Trend = g_TradeContext.CurrentTrendM15;
       
-      if (currentTrend == 0)
+      // H1 must have a clear direction (no trade if H1 neutral)
+      if (h1Trend == DIRECTION_NONE)
          return false;
       
-      if (this.m_BullishOnly && currentTrend != 1)
-         return false;
+      // For BUY: H1 must be bullish, M15 must be bullish or neutral
+      if (h1Trend == DIRECTION_BUY)
+      {
+         if (m15Trend == DIRECTION_SELL)
+            return false;  // M15 disagrees - filter fails
+         
+         if (this.m_BullishOnly && h1Trend != DIRECTION_BUY)
+            return false;
+         
+         if (this.m_BearishOnly)
+            return false;
+         
+         return true;
+      }
       
-      if (this.m_BearishOnly && currentTrend != -1)
-         return false;
+      // For SELL: H1 must be bearish, M15 must be bearish or neutral
+      if (h1Trend == DIRECTION_SELL)
+      {
+         if (m15Trend == DIRECTION_BUY)
+            return false;  // M15 disagrees - filter fails
+         
+         if (this.m_BullishOnly)
+            return false;
+         
+         if (this.m_BearishOnly && h1Trend != DIRECTION_SELL)
+            return false;
+         
+         return true;
+      }
       
-      return true;
+      return false;
    }
    
    //+------------------------------------------------------------------+
@@ -78,18 +104,23 @@ public:
    //+------------------------------------------------------------------+
    string Reason()
    {
-      int currentTrend = g_TradeContext.CurrentTrend;
+      int h1Trend = g_TradeContext.CurrentTrend;
+      int m15Trend = g_TradeContext.CurrentTrendM15;
       
-      if (currentTrend == 1)
-         return "H1 Trend: BULLISH - PASSED";
+      string h1Str = (h1Trend == DIRECTION_BUY) ? "BULLISH" :
+                      (h1Trend == DIRECTION_SELL) ? "BEARISH" : "NONE";
+      string m15Str = (m15Trend == DIRECTION_BUY) ? "BULLISH" :
+                       (m15Trend == DIRECTION_SELL) ? "BEARISH" : "NONE";
       
-      if (currentTrend == -1)
-         return "H1 Trend: BEARISH - PASSED";
+      if (h1Trend == DIRECTION_NONE)
+         return StringFormat("H1 Trend: %s - FAILED (no trend)", h1Str);
       
-      if (currentTrend == 0)
-         return "H1 Trend: NONE - FAILED";
+      // Check for disagreement
+      if ((h1Trend == DIRECTION_BUY && m15Trend == DIRECTION_SELL) ||
+          (h1Trend == DIRECTION_SELL && m15Trend == DIRECTION_BUY))
+         return StringFormat("H1: %s, M15: %s - FAILED (trend mismatch)", h1Str, m15Str);
       
-      return "Trend validation inconclusive";
+      return StringFormat("H1: %s, M15: %s - PASSED", h1Str, m15Str);
    }
    
    //+------------------------------------------------------------------+

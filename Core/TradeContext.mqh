@@ -54,6 +54,7 @@ struct TradeContext
    
    // === Market Analysis Results ===
    int CurrentTrend;
+   int CurrentTrendM15;
    int MarketMode;
    int Session;
    
@@ -135,6 +136,7 @@ struct TradeContext
       this.ATR_Buffer = 1.5;
       
       this.CurrentTrend = DIRECTION_NONE;
+      this.CurrentTrendM15 = DIRECTION_NONE;
       this.MarketMode = MODE_NO_TRADE;
       this.Session = 0;
       
@@ -265,12 +267,15 @@ struct TradeContext
    bool UpdateActiveTrades()
    {
       this.ActiveTrades = 0;
-      for (int i = OrdersTotal() - 1; i >= 0; i--)
+      for (int i = PositionsTotal() - 1; i >= 0; i--)
       {
-         if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+         ulong ticket = PositionGetTicket(i);
+         if (ticket == 0) continue;
+         
+         if (PositionGetString(POSITION_SYMBOL) == _Symbol &&
+             PositionGetInteger(POSITION_MAGIC) == g_Parameters.MagicNumber)
          {
-            if (OrderSymbol() == _Symbol && OrderMagicNumber() == g_Parameters.MagicNumber)
-               this.ActiveTrades++;
+            this.ActiveTrades++;
          }
       }
       return true;
@@ -364,6 +369,9 @@ bool UpdateTradeContext()
    
    // Detect trend based on H1 structure
    DetectTrend();
+   
+   // Detect trend on M15 for dual-TF validation
+   DetectTrendM15();
    
    // Detect price action patterns on M5
    DetectPriceAction();
@@ -462,8 +470,73 @@ void DetectTrend()
 }
 
 //+------------------------------------------------------------------+
-//| Detect price action patterns from M5 candles                     |
+//| Detect trend based on M15 market structure (HH/HL or LH/LL)     |
 //+------------------------------------------------------------------+
+void DetectTrendM15()
+{
+   if (ArraySize(g_TradeContext.M15Rates) < 50)
+      return;
+   
+   double recentHighs[];
+   double recentLows[];
+   ArrayResize(recentHighs, 0);
+   ArrayResize(recentLows, 0);
+   
+   int lookback = InpSwingLookback * 3;  // More M15 bars for same lookback
+   int swingPeriod = 3;
+   
+   for (int i = swingPeriod; i < lookback - swingPeriod && i < ArraySize(g_TradeContext.M15Rates) - swingPeriod; i++)
+   {
+      bool isSwingHigh = true;
+      bool isSwingLow = true;
+      
+      for (int j = 1; j <= swingPeriod; j++)
+      {
+         if (g_TradeContext.M15Rates[i].high <= g_TradeContext.M15Rates[i-j].high ||
+             g_TradeContext.M15Rates[i].high <= g_TradeContext.M15Rates[i+j].high)
+            isSwingHigh = false;
+             
+         if (g_TradeContext.M15Rates[i].low >= g_TradeContext.M15Rates[i-j].low ||
+             g_TradeContext.M15Rates[i].low >= g_TradeContext.M15Rates[i+j].low)
+            isSwingLow = false;
+      }
+      
+      if (isSwingHigh)
+      {
+         ArrayResize(recentHighs, ArraySize(recentHighs) + 1);
+         recentHighs[ArraySize(recentHighs) - 1] = g_TradeContext.M15Rates[i].high;
+      }
+      
+      if (isSwingLow)
+      {
+         ArrayResize(recentLows, ArraySize(recentLows) + 1);
+         recentLows[ArraySize(recentLows) - 1] = g_TradeContext.M15Rates[i].low;
+      }
+   }
+   
+   if (ArraySize(recentHighs) < 2 || ArraySize(recentLows) < 2)
+   {
+      g_TradeContext.CurrentTrendM15 = DIRECTION_NONE;
+      return;
+   }
+   
+   double lastHigh = recentHighs[ArraySize(recentHighs) - 1];
+   double prevHigh = recentHighs[ArraySize(recentHighs) - 2];
+   double lastLow = recentLows[ArraySize(recentLows) - 1];
+   double prevLow = recentLows[ArraySize(recentLows) - 2];
+   
+   bool isBullish = (lastHigh > prevHigh) && (lastLow > prevLow);
+   bool isBearish = (lastHigh < prevHigh) && (lastLow < prevLow);
+   
+   if (isBullish && !isBearish)
+      g_TradeContext.CurrentTrendM15 = DIRECTION_BUY;
+   else if (isBearish && !isBullish)
+      g_TradeContext.CurrentTrendM15 = DIRECTION_SELL;
+   else
+      g_TradeContext.CurrentTrendM15 = DIRECTION_NONE;
+}
+
+
 void DetectPriceAction()
 {
    g_TradeContext.LastPriceAction = PA_NONE;

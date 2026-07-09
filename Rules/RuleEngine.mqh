@@ -18,6 +18,7 @@
 #include "SpreadFilter.mqh"
 #include "SessionFilter.mqh"
 #include "NewsFilter.mqh"
+#include "ATRFilter.mqh"
 
 //+------------------------------------------------------------------+
 //| Trade Decision Structure                                        |
@@ -25,6 +26,7 @@
 struct TradeDecision
 {
    bool Allowed;
+   bool HalfRisk;
    int ConfidenceScore;
    string Reasons;
    Array<RuleResult> RuleResults;
@@ -35,6 +37,7 @@ struct TradeDecision
    void TradeDecision()
    {
       this.Allowed = false;
+      this.HalfRisk = false;
       this.ConfidenceScore = 0;
       this.Reasons = "";
       this.RuleResults = Array<RuleResult>();
@@ -139,6 +142,9 @@ public:
       
       // Add market rules (Level 2)
       this.AddMarketRule(new CTrendFilter());
+      
+      // Add ATR filter (Market level - contributes to confidence score)
+      this.AddMarketRule(new CATRFilter());
       
       // Add entry rules (Level 3)
       this.AddEntryRule(new CBOSFilter());
@@ -258,7 +264,8 @@ public:
       decision.ConfidenceScore = totalScore;
       decision.Reasons = reasons;
       decision.Allowed = (totalScore >= this.m_MinConfidenceScore);
-      
+      decision.HalfRisk = (decision.Allowed && totalScore < 85);
+   
       return decision;
    }
    
