@@ -9,21 +9,21 @@
 #property strict
 
 #include <Trade\Trade.mqh>
-#include "Core\TradeContext.mqh"
-#include "Core\DataCache.mqh"
-#include "Core\MetricsEngine.mqh"
-#include "Core\Session.mqh"
-#include "Core\ATR.mqh"
-#include "Core\Risk.mqh"
-#include "Core\TradeManager.mqh"
-#include "Core\Execution.mqh"
-#include "Core\Logger.mqh"
-#include "Config\Parameters.mqh"
-#include "Rules\RuleEngine.mqh"
-#include "Services\NewsService.mqh"
-#include "Services\TimeService.mqh"
-#include "Services\SymbolService.mqh"
-#include "Services\MarketMode.mqh"
+#include "..\\Core\\TradeContext.mqh"
+#include "..\\Core\\DataCache.mqh"
+#include "..\\Core\\MetricsEngine.mqh"
+#include "..\\Core\\Session.mqh"
+#include "..\\Core\\ATR.mqh"
+#include "..\\Core\\Risk.mqh"
+#include "..\\Core\\TradeManager.mqh"
+#include "..\\Core\\Execution.mqh"
+#include "..\\Core\\Logger.mqh"
+#include "..\\Config\\Parameters.mqh"
+#include "..\\Rules\\RuleEngine.mqh"
+#include "..\\Services\\NewsService.mqh"
+#include "..\\Services\\TimeService.mqh"
+#include "..\\Services\\SymbolService.mqh"
+#include "..\\Services\\MarketMode.mqh"
 
 //+------------------------------------------------------------------+
 //| Global Trade Object                                             |
