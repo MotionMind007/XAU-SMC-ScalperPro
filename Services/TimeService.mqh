@@ -1,3 +1,5 @@
+#ifndef __SERVICES_TIMESERVICE_MHQ__
+#define __SERVICES_TIMESERVICE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                     TimeService.mqh |
 //|                        XAU SMC Scalper Pro - Services Module |
@@ -287,3 +289,5 @@ int GetDailyBarCount(int timeframe)
    return g_TimeService.GetDailyBarCount(timeframe);
 }
 //+------------------------------------------------------------------+
+
+#endif // __SERVICES_TIMESERVICE_MHQ__

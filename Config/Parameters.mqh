@@ -1,3 +1,5 @@
+#ifndef __CONFIG_PARAMETERS_MHQ__
+#define __CONFIG_PARAMETERS_MHQ__
 //+------------------------------------------------------------------+
 //|                                                     Parameters.mqh |
 //|                        XAU SMC Scalper Pro - Config Module |
@@ -274,3 +276,5 @@ Parameters& GetParameters()
    return g_Parameters;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CONFIG_PARAMETERS_MHQ__

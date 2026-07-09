@@ -1,3 +1,5 @@
+#ifndef __RULES_SESSIONFILTER_MHQ__
+#define __RULES_SESSIONFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                   SessionFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -111,3 +113,5 @@ CSessionFilter CreateSessionFilter(bool allowLondon = true, bool allowNY = true,
    return CSessionFilter(allowLondon, allowNY, allowOverlap);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_SESSIONFILTER_MHQ__

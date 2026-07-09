@@ -1,3 +1,5 @@
+#ifndef __CORE_DATACACHE_MHQ__
+#define __CORE_DATACACHE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                        DataCache.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -781,3 +783,5 @@ DataCache* GetCacheForTimeframe(ENUM_TIMEFRAMES tf)
    }
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_DATACACHE_MHQ__

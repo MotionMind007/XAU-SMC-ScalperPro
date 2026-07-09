@@ -1,3 +1,5 @@
+#ifndef __CORE_SESSION_MHQ__
+#define __CORE_SESSION_MHQ__
 //+------------------------------------------------------------------+
 //|                                                          Session.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -164,3 +166,5 @@ int GetTimeRemainingInSession()
    return sessionEnd - totalMinutes;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_SESSION_MHQ__

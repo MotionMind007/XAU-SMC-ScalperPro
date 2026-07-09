@@ -1,3 +1,5 @@
+#ifndef __SERVICES_NEWSSERVICE_MHQ__
+#define __SERVICES_NEWSSERVICE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                      NewsService.mqh |
 //|                        XAU SMC Scalper Pro - Services Module |
@@ -459,3 +461,5 @@ int GetTimeUntilNextNews()
    return g_NewsService.GetTimeUntilNextNews();
 }
 //+------------------------------------------------------------------+
+
+#endif // __SERVICES_NEWSSERVICE_MHQ__

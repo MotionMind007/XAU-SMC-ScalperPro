@@ -1,3 +1,5 @@
+#ifndef __RULES_ORDERBLOCKFILTER_MHQ__
+#define __RULES_ORDERBLOCKFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                 OrderBlockFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -141,3 +143,5 @@ COrderBlockFilter CreateOrderBlockFilter(int tf = PERIOD_M15, bool bullishOnly =
    return COrderBlockFilter(tf, bullishOnly, bearishOnly);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_ORDERBLOCKFILTER_MHQ__

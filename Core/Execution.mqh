@@ -1,3 +1,5 @@
+#ifndef __CORE_EXECUTION_MHQ__
+#define __CORE_EXECUTION_MHQ__
 //+------------------------------------------------------------------+
 //|                                                      Execution.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -255,3 +257,5 @@ bool IsMarketNormal()
    return true;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_EXECUTION_MHQ__

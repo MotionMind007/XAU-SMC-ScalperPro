@@ -1,3 +1,5 @@
+#ifndef __CORE_RISK_MHQ__
+#define __CORE_RISK_MHQ__
 //+------------------------------------------------------------------+
 //|                                                          Risk.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -156,3 +158,5 @@ bool ValidateRiskParameters()
    return true;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_RISK_MHQ__

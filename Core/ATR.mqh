@@ -1,3 +1,5 @@
+#ifndef __CORE_ATR_MHQ__
+#define __CORE_ATR_MHQ__
 //+------------------------------------------------------------------+
 //|                                                            ATR.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -176,3 +178,5 @@ void CleanupATR()
    }
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_ATR_MHQ__

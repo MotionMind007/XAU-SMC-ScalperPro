@@ -1,3 +1,5 @@
+#ifndef __CORE_LOGGER_MHQ__
+#define __CORE_LOGGER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                          Logger.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -243,3 +245,5 @@ bool WriteSummaryReport()
    return true;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_LOGGER_MHQ__

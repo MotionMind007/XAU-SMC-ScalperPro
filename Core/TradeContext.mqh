@@ -1,3 +1,5 @@
+#ifndef __CORE_TRADECONTEXT_MHQ__
+#define __CORE_TRADECONTEXT_MHQ__
 //+------------------------------------------------------------------+
 //|                                                      TradeContext.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -744,3 +746,5 @@ string TradeContextToString()
    return output;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_TRADECONTEXT_MHQ__

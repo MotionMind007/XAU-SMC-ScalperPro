@@ -1,3 +1,5 @@
+#ifndef __SERVICES_MARKETMODE_MHQ__
+#define __SERVICES_MARKETMODE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                     MarketMode.mqh |
 //|                        XAU SMC Scalper Pro - Services Module |
@@ -184,3 +186,5 @@ string GetMarketModeSummary()
       (g_MM_AtrAverage > 0 ? g_MM_CurrentATR / g_MM_AtrAverage : 0.0));
 }
 //+------------------------------------------------------------------+
+
+#endif // __SERVICES_MARKETMODE_MHQ__

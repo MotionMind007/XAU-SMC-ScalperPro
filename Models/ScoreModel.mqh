@@ -1,3 +1,5 @@
+#ifndef __MODELS_SCOREMODEL_MHQ__
+#define __MODELS_SCOREMODEL_MHQ__
 //+------------------------------------------------------------------+
 //|                                                      ScoreModel.mqh |
 //|                        XAU SMC Scalper Pro - Models      |
@@ -187,3 +189,5 @@ struct PriceAction
    }
 };
 //+------------------------------------------------------------------+
+
+#endif // __MODELS_SCOREMODEL_MHQ__

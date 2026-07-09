@@ -1,3 +1,5 @@
+#ifndef __CORE_METRICSENGINE_MHQ__
+#define __CORE_METRICSENGINE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                     MetricsEngine.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -416,3 +418,5 @@ string GetMetricsSummary()
    return g_MetricsEngine.GetSummary();
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_METRICSENGINE_MHQ__

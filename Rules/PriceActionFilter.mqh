@@ -1,3 +1,5 @@
+#ifndef __RULES_PRICEACTIONFILTER_MHQ__
+#define __RULES_PRICEACTIONFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                 PriceActionFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -145,3 +147,5 @@ CPriceActionFilter CreatePriceActionFilter(int tf = PERIOD_M5, int maxIndex = 2,
    return CPriceActionFilter(tf, maxIndex, bullishOnly, bearishOnly);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_PRICEACTIONFILTER_MHQ__

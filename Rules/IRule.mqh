@@ -1,3 +1,5 @@
+#ifndef __RULES_IRULE_MHQ__
+#define __RULES_IRULE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                            IRule.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -91,3 +93,5 @@ enum RuleCategory
    CATEGORY_RISK = 3        // Risk validation rules
 };
 //+------------------------------------------------------------------+
+
+#endif // __RULES_IRULE_MHQ__

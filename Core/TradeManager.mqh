@@ -1,3 +1,5 @@
+#ifndef __CORE_TRADEMANAGER_MHQ__
+#define __CORE_TRADEMANAGER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                    TradeManager.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -486,3 +488,5 @@ bool ClosePosition(ulong ticket, string reason)
    return false;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_TRADEMANAGER_MHQ__

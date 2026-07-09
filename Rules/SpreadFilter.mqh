@@ -1,3 +1,5 @@
+#ifndef __RULES_SPREADFILTER_MHQ__
+#define __RULES_SPREADFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                     SpreadFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -93,3 +95,5 @@ CSpreadFilter CreateSpreadFilter(double maxSpreadRatio = 20.0, int minBars = 10)
    return CSpreadFilter(maxSpreadRatio, minBars);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_SPREADFILTER_MHQ__

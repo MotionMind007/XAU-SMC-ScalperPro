@@ -1,3 +1,5 @@
+#ifndef __RULES_NEWSFILTER_MHQ__
+#define __RULES_NEWSFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                      NewsFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -77,3 +79,5 @@ public:
    }
 };
 //+------------------------------------------------------------------+
+
+#endif // __RULES_NEWSFILTER_MHQ__

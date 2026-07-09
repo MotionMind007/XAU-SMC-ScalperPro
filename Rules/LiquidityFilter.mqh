@@ -1,3 +1,5 @@
+#ifndef __RULES_LIQUIDITYFILTER_MHQ__
+#define __RULES_LIQUIDITYFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                   LiquidityFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -143,3 +145,5 @@ CLiquidityFilter CreateLiquidityFilter(int tf = PERIOD_M15, bool requireSweep = 
    return CLiquidityFilter(tf, requireSweep, sweepTolerance);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_LIQUIDITYFILTER_MHQ__

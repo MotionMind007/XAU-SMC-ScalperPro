@@ -1,3 +1,5 @@
+#ifndef __RULES_TRENDFILTER_MHQ__
+#define __RULES_TRENDFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                       TrendFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -195,3 +197,5 @@ CTrendM15Filter CreateTrendM15Filter()
    return CTrendM15Filter();
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_TRENDFILTER_MHQ__

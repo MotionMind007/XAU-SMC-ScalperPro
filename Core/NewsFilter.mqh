@@ -1,3 +1,5 @@
+#ifndef __CORE_NEWSFILTER_MHQ__
+#define __CORE_NEWSFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                        NewsFilter.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -37,3 +39,5 @@ bool InitializeNewsFilter()
    return true;
 }
 //+------------------------------------------------------------------+
+
+#endif // __CORE_NEWSFILTER_MHQ__

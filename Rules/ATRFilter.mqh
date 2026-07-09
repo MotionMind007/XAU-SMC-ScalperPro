@@ -1,3 +1,5 @@
+#ifndef __RULES_ATRFILTER_MHQ__
+#define __RULES_ATRFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                     ATRFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -101,3 +103,5 @@ CATRFilter CreateATRFilter(double minATR = 3.0, double maxATR = 40.0)
    return CATRFilter(minATR, maxATR);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_ATRFILTER_MHQ__

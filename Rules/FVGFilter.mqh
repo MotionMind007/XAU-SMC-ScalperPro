@@ -1,3 +1,5 @@
+#ifndef __RULES_FVGFILTER_MHQ__
+#define __RULES_FVGFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                         FVGFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -173,3 +175,5 @@ CFVGFilter CreateFVGFilter(int tf = PERIOD_M5, bool allowPartial = true, double 
    return CFVGFilter(tf, allowPartial, maxFVGSize);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_FVGFILTER_MHQ__

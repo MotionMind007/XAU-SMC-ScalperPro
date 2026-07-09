@@ -1,3 +1,5 @@
+#ifndef __RULES_BOSFILTER_MHQ__
+#define __RULES_BOSFILTER_MHQ__
 //+------------------------------------------------------------------+
 //|                                                       BOSFilter.mqh |
 //|                        XAU SMC Scalper Pro - Rules Module |
@@ -136,3 +138,5 @@ CBOSFilter CreateBOSFilter(int tf = PERIOD_M15, int swingLookback = 5, bool requ
    return CBOSFilter(tf, swingLookback, requireFresh);
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_BOSFILTER_MHQ__

@@ -1,3 +1,5 @@
+#ifndef __MODELS_ORDERBLOCKMODEL_MHQ__
+#define __MODELS_ORDERBLOCKMODEL_MHQ__
 //+------------------------------------------------------------------+
 //|                                                 OrderBlockModel.mqh |
 //|                        XAU SMC Scalper Pro - Models      |
@@ -166,3 +168,5 @@ public:
    }
 };
 //+------------------------------------------------------------------+
+
+#endif // __MODELS_ORDERBLOCKMODEL_MHQ__

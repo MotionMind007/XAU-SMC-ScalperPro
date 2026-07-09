@@ -1,3 +1,5 @@
+#ifndef __MODELS_LIQUIDITYMODEL_MHQ__
+#define __MODELS_LIQUIDITYMODEL_MHQ__
 //+------------------------------------------------------------------+
 //|                                                  LiquidityModel.mqh |
 //|                        XAU SMC Scalper Pro - Models      |
@@ -99,3 +101,5 @@ struct LiquidityLevel
    }
 };
 //+------------------------------------------------------------------+
+
+#endif // __MODELS_LIQUIDITYMODEL_MHQ__

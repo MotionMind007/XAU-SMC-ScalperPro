@@ -1,3 +1,5 @@
+#ifndef __RULES_RULEENGINE_MHQ__
+#define __RULES_RULEENGINE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                      RuleEngine.mqh |
 //|                        XAU SMC Scalper Pro - Core Module |
@@ -410,3 +412,5 @@ bool InitializeRuleEngine()
    return g_RuleEngine.Initialize();
 }
 //+------------------------------------------------------------------+
+
+#endif // __RULES_RULEENGINE_MHQ__

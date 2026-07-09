@@ -1,3 +1,5 @@
+#ifndef __SERVICES_SYMBOLSERVICE_MHQ__
+#define __SERVICES_SYMBOLSERVICE_MHQ__
 //+------------------------------------------------------------------+
 //|                                                   SymbolService.mqh |
 //|                        XAU SMC Scalper Pro - Services Module |
@@ -316,3 +318,5 @@ bool IsSymbolTradeAllowed()
 
 
 //+------------------------------------------------------------------+
+
+#endif // __SERVICES_SYMBOLSERVICE_MHQ__

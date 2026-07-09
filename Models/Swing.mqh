@@ -1,3 +1,5 @@
+#ifndef __MODELS_SWING_MHQ__
+#define __MODELS_SWING_MHQ__
 //+------------------------------------------------------------------+
 //|                                                          Swing.mqh |
 //|                        XAU SMC Scalper Pro - Models      |
@@ -76,3 +78,5 @@ struct SwingPoint
    }
 };
 //+------------------------------------------------------------------+
+
+#endif // __MODELS_SWING_MHQ__
