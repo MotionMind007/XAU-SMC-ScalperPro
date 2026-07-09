@@ -51,23 +51,36 @@ int GetCurrentSession()
    int minute = time.min;
    int totalMinutes = hour * 60 + minute;
    
-   // Session times (in UTC+0, adjust for your broker's timezone)
-   // London: 08:00 - 16:00 UTC
-   // New York: 13:00 - 21:00 UTC
-   // Overlap: 13:00 - 16:00 UTC
+   // Session times in UTC (converted from WIB = UTC+7 per PRD)
+   // Asia:   02:00-08:00 WIB = 19:00-01:00 UTC (spans midnight)
+   // London: 15:00-19:00 WIB = 08:00-12:00 UTC
+   // NY:     20:00-00:00 WIB = 13:00-17:00 UTC
+   // Overlap: London ∩ NY  = 13:00-12:00 UTC (only if London extends, but
+   //          with new London ending at 12:00 and NY starting at 13:00,
+   //          there is no overlap — kept for compatibility)
    
-   // London session (08:00 - 16:00 UTC)
-   int londonStart = 8 * 60;      // 08:00
-   int londonEnd = 16 * 60;       // 16:00
+   // Asia session (19:00 - 01:00 UTC, spans midnight)
+   int asiaStart = 19 * 60;      // 19:00 UTC = 02:00 WIB
+   int asiaEnd = 1 * 60;         // 01:00 UTC = 08:00 WIB
    
-   // New York session (13:00 - 21:00 UTC)
-   int nyStart = 13 * 60;         // 13:00
-   int nyEnd = 21 * 60;           // 21:00
+   // London session (08:00 - 12:00 UTC)
+   int londonStart = 8 * 60;     // 08:00 UTC = 15:00 WIB
+   int londonEnd = 12 * 60;      // 12:00 UTC = 19:00 WIB
    
-   // Overlap (13:00 - 16:00 UTC)
-   int overlapStart = 13 * 60;
-   int overlapEnd = 16 * 60;
+   // New York session (13:00 - 17:00 UTC)
+   int nyStart = 13 * 60;        // 13:00 UTC = 20:00 WIB
+   int nyEnd = 17 * 60;          // 17:00 UTC = 00:00 WIB
    
+   // Overlap: London (08-12) and NY (13-17) no longer overlap with
+   // tightened PRD times.  Keep the slot for future flexibility.
+   int overlapStart = 13 * 60;   // placeholder — no real overlap
+   int overlapEnd = 12 * 60;     // empty range
+   
+   // Check Asia (spans midnight: 19:00 - 01:00 UTC)
+   if (hour >= 19 || hour < 1)
+      return SESSION_OVERLAP;  // Treat Asia as a valid session for trading
+   
+   // Check overlap (empty with new times, kept for compatibility)
    if (totalMinutes >= overlapStart && totalMinutes < overlapEnd)
       return SESSION_OVERLAP;
    
@@ -127,14 +140,26 @@ int GetTimeRemainingInSession()
    
    int sessionEnd = 0;
    
-   if (totalMinutes >= 13 * 60 && totalMinutes < 16 * 60)  // Overlap
-      sessionEnd = 16 * 60;
-   else if (totalMinutes >= 8 * 60 && totalMinutes < 16 * 60)  // London
-      sessionEnd = 16 * 60;
-   else if (totalMinutes >= 13 * 60 && totalMinutes < 21 * 60)  // NY
-      sessionEnd = 21 * 60;
+   // Asia (19:00-01:00 UTC, spans midnight)
+   if (hour >= 19 || hour < 1)
+   {
+      // Asia ends at 01:00 UTC = 60 minutes
+      sessionEnd = (hour >= 19) ? (24 * 60) + 1 * 60 : 1 * 60;
+   }
+   // London (08:00-12:00 UTC)
+   else if (totalMinutes >= 8 * 60 && totalMinutes < 12 * 60)
+   {
+      sessionEnd = 12 * 60;
+   }
+   // NY (13:00-17:00 UTC)
+   else if (totalMinutes >= 13 * 60 && totalMinutes < 17 * 60)
+   {
+      sessionEnd = 17 * 60;
+   }
    else
+   {
       return 0;
+   }
    
    return sessionEnd - totalMinutes;
 }

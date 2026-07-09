@@ -350,13 +350,35 @@ bool InitializeTradeContext()
 }
 
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Lightweight per-tick update - only fresh market data            |
+//| Avoids expensive analysis (trend detection, swing analysis)     |
+//+------------------------------------------------------------------+
+bool UpdateTradeContextPerTick()
+{
+   // Copy only current timeframe rates (M5) for fresh price data
+   if (CopyRates(_Symbol, PERIOD_M5, 0, 200, g_TradeContext.M5Rates) != 200)
+   {
+      g_TradeContext.AddError("PerTick: Failed to copy M5 rates");
+      return false;
+   }
+   
+   // Update lightweight context fields
+   g_TradeContext.CurrentSpread = SymbolInfoDouble(_Symbol, SYMBOL_SPREAD);
+   g_TradeContext.SpreadRatio = g_TradeContext.CurrentSpread / g_Parameters.DefaultSL * 100;
+   g_TradeContext.Session = GetCurrentSession();
+   g_TradeContext.SessionActive = IsSessionActive(g_TradeContext.Session);
+   g_TradeContext.NewsActive = IsNewsActive();
+   g_TradeContext.UpdateActiveTrades();
+   
+   return true;
+}
+
+//+------------------------------------------------------------------+
 bool UpdateTradeContext()
 {
-   datetime currentBar = iTime(_Symbol, PERIOD_M5, 0);
-   if (currentBar == g_TradeContext.LastUpdate) return true;
-   
-   g_TradeContext.LastUpdate = currentBar;
-   
+   g_TradeContext.LastUpdate = iTime(_Symbol, PERIOD_M5, 0);
+
    if (!CopyMarketData()) return false;
    g_TradeContext.UpdateActiveTrades();
    g_TradeContext.UpdateDailyMetrics();

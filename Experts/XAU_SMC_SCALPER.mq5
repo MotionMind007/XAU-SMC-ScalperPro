@@ -181,30 +181,37 @@ void OnTick()
    if (!g_Initialized)
       return;
    
-   // Update trade context (only on new bar to save resources)
-   if (!IsNewBar(PERIOD_M5))
-      return;
-   
-   // Update trade context with fresh data
-   if (!UpdateTradeContext())
+   // EVERY TICK: Update trade context with fresh market data (lightweight)
+   if (!UpdateTradeContextPerTick())
    {
       Logger_Log(ERROR, "Failed to update trade context");
       return;
    }
    
-   // Update ATR
+   // EVERY TICK: Update ATR (lightweight)
    if (!UpdateATR())
    {
       Logger_Log(WARNING, "Failed to update ATR");
    }
    
-   // Update market mode detection (H1 ATR comparison)
-   CalculateMarketMode();
-   
-   // Update data cache (all timeframes: H1, M15, M5)
-   if (!UpdateDataCache())
+   // EVERY TICK: Update M5 data cache (entry timing data)
+   if (!UpdateDataCacheM5())
    {
       Logger_Log(ERROR, "Failed to update data cache");
+      return;
+   }
+   
+   // NEW M5 BAR ONLY: Run heavy analysis and trading cycle
+   if (!IsNewBar(PERIOD_M5))
+      return;
+   
+   // Heavy operations on new bar only
+   CalculateMarketMode();
+   
+   // Update H1/M15 data caches (structural analysis only on new bar)
+   if (!UpdateDataCacheH1M15())
+   {
+      Logger_Log(ERROR, "Failed to update H1/M15 data cache");
       return;
    }
    

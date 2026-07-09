@@ -22,17 +22,17 @@ class CFVGFilter : public IRule
 {
 private:
    int m_Timeframe;
-   bool m_RequireFreshOnly;
+   bool m_AllowPartial;      // Allow partial FVGs in addition to fresh
    double m_MaxFVGSize;
    
 public:
    //+------------------------------------------------------------------+
    //| Constructor                                                    |
    //+------------------------------------------------------------------+
-   void CFVGFilter(int tf = PERIOD_M5, bool requireFreshOnly = true, double maxFVGSize = 50.0)
+   void CFVGFilter(int tf = PERIOD_M5, bool allowPartial = true, double maxFVGSize = 50.0)
    {
       this.m_Timeframe = tf;
-      this.m_RequireFreshOnly = requireFreshOnly;
+      this.m_AllowPartial = allowPartial;
       this.m_MaxFVGSize = maxFVGSize;
    }
    
@@ -61,8 +61,12 @@ public:
       {
          FVG fvg = freshFVGs[i];
          
-         // Skip if not fresh and we require fresh only
-         if (this.m_RequireFreshOnly && fvg.Status != FVG_FRESH)
+         // Skip partial FVGs if partials are not allowed
+         if (!this.m_AllowPartial && fvg.Status != FVG_FRESH)
+            continue;
+         
+         // Only accept fresh or partial FVGs (skip fully filled)
+         if (fvg.Status != FVG_FRESH && fvg.Status != FVG_PARTIAL)
             continue;
          
          // Check FVG size
@@ -123,7 +127,12 @@ public:
          {
             FVG fvg = freshFVGs[i];
             
-            if (this.m_RequireFreshOnly && fvg.Status != FVG_FRESH)
+            // Skip partial FVGs if partials are not allowed
+            if (!this.m_AllowPartial && fvg.Status != FVG_FRESH)
+               continue;
+            
+            // Only accept fresh or partial FVGs (skip fully filled)
+            if (fvg.Status != FVG_FRESH && fvg.Status != FVG_PARTIAL)
                continue;
             
             double fvgSize = fvg.SizeInPoints();
@@ -136,7 +145,10 @@ public:
             if (distance <= 15)
             {
                g_TradeContext.FVGScore = 10;
-               return "Fresh/Pending FVG detected - PASSED";
+               if (fvg.Status == FVG_FRESH)
+                  return "Fresh FVG detected - PASSED";
+               else
+                  return "Partial FVG detected - PASSED";
             }
          }
       }
@@ -147,17 +159,17 @@ public:
    //+------------------------------------------------------------------+
    //| Set require fresh only flag                                    |
    //+------------------------------------------------------------------+
-   void SetRequireFreshOnly(bool value)
+   void SetAllowPartial(bool value)
    {
-      this.m_RequireFreshOnly = value;
+      this.m_AllowPartial = value;
    }
 };
 
 //+------------------------------------------------------------------+
 //| Helper function to create FVG filter                            |
 //+------------------------------------------------------------------+
-CFVGFilter CreateFVGFilter(int tf = PERIOD_M5, bool requireFreshOnly = true, double maxFVGSize = 50.0)
+CFVGFilter CreateFVGFilter(int tf = PERIOD_M5, bool allowPartial = true, double maxFVGSize = 50.0)
 {
-   return CFVGFilter(tf, requireFreshOnly, maxFVGSize);
+   return CFVGFilter(tf, allowPartial, maxFVGSize);
 }
 //+------------------------------------------------------------------+

@@ -677,6 +677,38 @@ bool InitializeDataCache()
 }
 
 //+------------------------------------------------------------------+
+//| Update M5 data cache (lightweight, runs every tick)             |
+//+------------------------------------------------------------------+
+bool UpdateDataCacheM5()
+{
+   // Update M5 cache (entry timing data - needs fresh updates)
+   if (!g_CacheM5.UpdateIfNewCandle())
+   {
+      g_TradeContext.AddError("Failed to update M5 data cache");
+      return false;
+   }
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Update H1 and M15 data caches (heavy, runs on new bar only)    |
+//+------------------------------------------------------------------+
+bool UpdateDataCacheH1M15()
+{
+   // Update M15 cache (primary for structural analysis)
+   if (!g_CacheM15.UpdateIfNewCandle())
+   {
+      g_TradeContext.AddError("Failed to update M15 data cache");
+      return false;
+   }
+   
+   // Update H1 cache (for higher timeframe analysis)
+   g_CacheH1.UpdateIfNewCandle();
+   
+   return true;
+}
+
+//+------------------------------------------------------------------+
 //| Update all data caches if new candle                             |
 //+------------------------------------------------------------------+
 bool UpdateDataCache()
