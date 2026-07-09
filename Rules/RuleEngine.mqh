@@ -64,25 +64,6 @@ struct ExitDecision
    }
 };
 
-//+------------------------------------------------------------------+
-//| Confidence Score Rule                                           |
-//+------------------------------------------------------------------+
-class CConfidenceScoreRule : public IRule
-{
-private:
-   int m_MinScore;
-public:
-   void CConfidenceScoreRule(int minScore = 75) { this.m_MinScore = minScore; }
-   bool Check() { return (g_TradeContext.TotalConfidenceScore >= this.m_MinScore); }
-   string Name() { return "ConfidenceScore"; }
-   double Weight() { return 10.0; }
-   string Reason()
-   {
-      if (g_TradeContext.TotalConfidenceScore >= this.m_MinScore)
-         return StringFormat("Confidence Score: %d/%d - PASSED", g_TradeContext.TotalConfidenceScore, this.m_MinScore);
-      return StringFormat("Confidence Score: %d/%d - FAILED", g_TradeContext.TotalConfidenceScore, this.m_MinScore);
-   }
-};
 
 //+------------------------------------------------------------------+
 //| Rule Engine - Evaluates All Entry/Exit Rules                   |
@@ -136,12 +117,14 @@ public:
    bool Initialize()
    {
       // Add filter rules (Level 1 - Hard stops)
-      this.AddFilterRule(new CSessionFilter());
+      // News is the only hard stop filter; Session and Spread are soft score contributors
       this.AddFilterRule(new CNewsFilter());
-      this.AddFilterRule(new CSpreadFilter());
       
-      // Add market rules (Level 2)
-      this.AddMarketRule(new CTrendFilter());
+      // Add market rules (Level 2 - score contributors)
+      this.AddMarketRule(new CTrendH1Filter());
+      this.AddMarketRule(new CTrendM15Filter());
+      this.AddMarketRule(new CSessionFilter());
+      this.AddMarketRule(new CSpreadFilter());
       
       // Add ATR filter (Market level - contributes to confidence score)
       this.AddMarketRule(new CATRFilter());
@@ -152,10 +135,7 @@ public:
       this.AddEntryRule(new COrderBlockFilter());
       this.AddEntryRule(new CFVGFilter());
       this.AddEntryRule(new CPriceActionFilter());
-      
-      // Add risk rules (Level 4)
-      this.AddRiskRule(new CConfidenceScoreRule(this.m_MinConfidenceScore));
-      
+
       return true;
    }
    

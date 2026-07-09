@@ -78,7 +78,7 @@ int GetCurrentSession()
    
    // Check Asia (spans midnight: 19:00 - 01:00 UTC)
    if (hour >= 19 || hour < 1)
-      return SESSION_OVERLAP;  // Treat Asia as a valid session for trading
+       return SESSION_NONE;  // PRD: No trading during Asia session
    
    // Check overlap (empty with new times, kept for compatibility)
    if (totalMinutes >= overlapStart && totalMinutes < overlapEnd)

@@ -24,7 +24,8 @@ input int InputSwingLookback = 5;           // Swing lookback period [1-50]
 input int InputOBLookback = 10;             // OB lookback period [5-100]
 
 input group "=== Confidence Score Weights ==="
-input int InputTrendWeight = 20;            // Trend weight [0-30]
+input int InputTrendH1Weight = 20;          // Trend H1 weight [0-30]
+input int InputTrendM15Weight = 10;         // Trend M15 weight [0-20]
 input int InputStructureWeight = 15;        // Structure weight [0-30]
 input int InputLiquidityWeight = 15;        // Liquidity weight [0-30]
 input int InputOBWeight = 15;               // Order Block weight [0-30]
@@ -59,7 +60,8 @@ struct Parameters
    int SwingLookback;
    int OBLookback;
    
-   int TrendWeight;
+   int TrendH1Weight;
+   int TrendM15Weight;
    int StructureWeight;
    int LiquidityWeight;
    int OBWeight;
@@ -92,7 +94,8 @@ struct Parameters
       this.SwingLookback = InputSwingLookback;
       this.OBLookback = InputOBLookback;
       
-      this.TrendWeight = InputTrendWeight;
+      this.TrendH1Weight = InputTrendH1Weight;
+      this.TrendM15Weight = InputTrendM15Weight;
       this.StructureWeight = InputStructureWeight;
       this.LiquidityWeight = InputLiquidityWeight;
       this.OBWeight = InputOBWeight;
@@ -126,7 +129,8 @@ struct Parameters
       this.SwingLookback = InputSwingLookback;
       this.OBLookback = InputOBLookback;
       
-      this.TrendWeight = InputTrendWeight;
+      this.TrendH1Weight = InputTrendH1Weight;
+      this.TrendM15Weight = InputTrendM15Weight;
       this.StructureWeight = InputStructureWeight;
       this.LiquidityWeight = InputLiquidityWeight;
       this.OBWeight = InputOBWeight;

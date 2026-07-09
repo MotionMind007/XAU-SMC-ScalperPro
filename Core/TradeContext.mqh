@@ -95,6 +95,7 @@ struct TradeContext
    
    // === Score Components ===
    int TrendScore;
+   int TrendM15Score;
    int StructureScore;
    int LiquidityScore;
    int OBScore;
@@ -184,6 +185,7 @@ struct TradeContext
    void ResetScores()
    {
       this.TrendScore = 0;
+      this.TrendM15Score = 0;
       this.StructureScore = 0;
       this.LiquidityScore = 0;
       this.OBScore = 0;
@@ -285,7 +287,7 @@ struct TradeContext
    int CalculateConfidenceScore()
    {
       this.TotalConfidenceScore = 
-         this.TrendScore + this.StructureScore + this.LiquidityScore +
+         this.TrendScore + this.TrendM15Score + this.StructureScore + this.LiquidityScore +
          this.OBScore + this.FVGScore + this.PriceActionScore +
          this.SpreadScore + this.SessionScore + this.ATRScore;
       return this.TotalConfidenceScore;
@@ -551,11 +553,20 @@ void DetectTrendM15()
    bool isBearish = (lastHigh < prevHigh) && (lastLow < prevLow);
    
    if (isBullish && !isBearish)
+   {
       g_TradeContext.CurrentTrendM15 = DIRECTION_BUY;
+      g_TradeContext.TrendM15Score = (int)g_Parameters.TrendM15Weight;
+   }
    else if (isBearish && !isBullish)
+   {
       g_TradeContext.CurrentTrendM15 = DIRECTION_SELL;
+      g_TradeContext.TrendM15Score = (int)g_Parameters.TrendM15Weight;
+   }
    else
+   {
       g_TradeContext.CurrentTrendM15 = DIRECTION_NONE;
+      g_TradeContext.TrendM15Score = 0;
+   }
 }
 
 
