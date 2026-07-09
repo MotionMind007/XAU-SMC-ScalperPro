@@ -207,7 +207,7 @@ void ExecuteTradingCycle()
    }
    
    // Step 3: Check for existing positions
-   if (g_TradeContext.ActiveTrades >= Parameters.MaxTradesPerDay)
+   if (g_TradeContext.ActiveTrades >= g_Parameters.MaxTradesPerDay)
    {
       Logger_Log(DEBUG, "Max trades reached");
       return;
@@ -247,13 +247,13 @@ void ExecuteTradingCycle()
 double CalculatePositionSize()
 {
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
-   double riskAmount = balance * Parameters.RiskPercent / 100;
+   double riskAmount = balance * g_Parameters.RiskPercent / 100;
    
    // Get ATR buffer for SL calculation
    double atrBuffer = GetATRBuffer();
    
    // Calculate SL distance in points
-   double slDistance = Parameters.DefaultSL + atrBuffer;
+   double slDistance = g_Parameters.DefaultSL + atrBuffer;
    
    // Calculate lot size
    double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
@@ -288,7 +288,7 @@ double CalculateStopLoss()
       if (swingLow > 0)
          sl = swingLow - GetATRBuffer() * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
       else
-         sl = currentPrice - Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         sl = currentPrice - g_Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    }
    else if (g_TradeContext.CurrentTrend == DIRECTION_SELL)
    {
@@ -297,7 +297,7 @@ double CalculateStopLoss()
       if (swingHigh > 0)
          sl = swingHigh + GetATRBuffer() * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
       else
-         sl = currentPrice + Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         sl = currentPrice + g_Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    }
    
    // Normalize SL
@@ -338,12 +338,12 @@ bool ExecuteTrade(int direction, double lotSize, double sl, double tp)
    if (direction == DIRECTION_BUY)
    {
       return g_Trade.Buy(lotSize, _Symbol, SymbolInfoDouble(_Symbol, SYMBOL_ASK), sl, tp, 
-                        "SMC Scalper Pro", Parameters.MagicNumber);
+                        "SMC Scalper Pro", g_Parameters.MagicNumber);
    }
    else if (direction == DIRECTION_SELL)
    {
       return g_Trade.Sell(lotSize, _Symbol, SymbolInfoDouble(_Symbol, SYMBOL_BID), sl, tp,
-                         "SMC Scalper Pro", Parameters.MagicNumber);
+                         "SMC Scalper Pro", g_Parameters.MagicNumber);
    }
    
    return false;
@@ -383,33 +383,6 @@ void RecordTradeMetrics(int direction, double lotSize, double sl, double tp)
    tradeMetrics.BarsHeld = 0;
    
    g_MetricsEngine.RecordTrade(tradeMetrics);
-}
-
-//+------------------------------------------------------------------+
-//| Manage active positions                                         |
-//+------------------------------------------------------------------+
-void ManagePositions()
-{
-   for (int i = OrdersTotal() - 1; i >= 0; i--)
-   {
-      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
-      {
-         if (OrderSymbol() == _Symbol && OrderMagicNumber() == Parameters.MagicNumber)
-         {
-            // Check exit conditions
-            ExitDecision exitDecision = g_RuleEngine.CheckExit(OrderType());
-            
-            if (exitDecision.ShouldExit)
-            {
-               if (OrderClose(OrderTicket(), OrderLots(), SymbolInfoDouble(_Symbol, SYMBOL_BID), 3, clrRed))
-               {
-                  Logger_Log(INFO, "Position closed: " + exitDecision.Reason);
-                  g_TradeContext.ActiveTrades--;
-               }
-            }
-         }
-      }
-   }
 }
 
 //+------------------------------------------------------------------+

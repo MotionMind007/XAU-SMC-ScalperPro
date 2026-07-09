@@ -48,7 +48,7 @@ void ManagePositions()
    {
       if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
       {
-         if (OrderSymbol() == _Symbol && OrderMagicNumber() == Parameters.MagicNumber)
+         if (OrderSymbol() == _Symbol && OrderMagicNumber() == g_Parameters.MagicNumber)
          {
             ManageSinglePosition(OrderTicket());
          }
@@ -177,7 +177,7 @@ bool ApplyTrailingStop(ulong ticket)
       if (swingLow > 0)
          newSL = swingLow + atrBuffer;
       else
-         newSL = currentPrice - atrBuffer * Parameters.TrailingStep / Parameters.TrailingStart;
+         newSL = currentPrice - atrBuffer * g_Parameters.TrailingStep / g_Parameters.TrailingStart;
    }
    else
    {
@@ -185,7 +185,7 @@ bool ApplyTrailingStop(ulong ticket)
       if (swingHigh > 0)
          newSL = swingHigh - atrBuffer;
       else
-         newSL = currentPrice + atrBuffer * Parameters.TrailingStep / Parameters.TrailingStart;
+         newSL = currentPrice + atrBuffer * g_Parameters.TrailingStep / g_Parameters.TrailingStart;
    }
    
    // Normalize SL
@@ -270,23 +270,5 @@ bool ClosePosition(ulong ticket, string reason)
    }
    
    return false;
-}
-
-//+------------------------------------------------------------------+
-//| Get nearest swing high                                          |
-//+------------------------------------------------------------------+
-double GetNearestSwingHigh(double price)
-{
-   // This would reference DataCache in the actual implementation
-   return 0.0;
-}
-
-//+------------------------------------------------------------------+
-//| Get nearest swing low                                           |
-//+------------------------------------------------------------------+
-double GetNearestSwingLow(double price)
-{
-   // This would reference DataCache in the actual implementation
-   return 0.0;
 }
 //+------------------------------------------------------------------+

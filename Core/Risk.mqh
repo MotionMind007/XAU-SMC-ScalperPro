@@ -73,7 +73,7 @@ double CalculateRiskAmount(double lotSize, double stopLossPoints)
 double CalculateStopLossDistance()
 {
    double atrBuffer = GetATRBuffer();
-   return Parameters.DefaultSL + atrBuffer;
+   return g_Parameters.DefaultSL + atrBuffer;
 }
 
 //+------------------------------------------------------------------+
@@ -95,7 +95,7 @@ RiskResult CalculateRiskReward()
    result.SLDistancePoints = CalculateStopLossDistance();
    
    // Calculate lot size
-   result.LotSize = CalculateLotSize(Parameters.RiskPercent, result.SLDistancePoints);
+   result.LotSize = CalculateLotSize(g_Parameters.RiskPercent, result.SLDistancePoints);
    
    // Calculate risk amount
    result.RiskAmount = CalculateRiskAmount(result.LotSize, result.SLDistancePoints);
@@ -141,21 +141,21 @@ bool IsMarginSufficient(double lotSize)
 bool ValidateRiskParameters()
 {
    // Check risk percent
-   if (Parameters.RiskPercent < 0.1 || Parameters.RiskPercent > 5.0)
+   if (g_Parameters.RiskPercent < 0.1 || g_Parameters.RiskPercent > 5.0)
    {
       Print("Error: Risk percent must be between 0.1% and 5%");
       return false;
    }
    
    // Check daily loss limit
-   if (Parameters.DailyLossLimit < 1 || Parameters.DailyLossLimit > 10)
+   if (g_Parameters.DailyLossLimit < 1 || g_Parameters.DailyLossLimit > 10)
    {
       Print("Error: Daily loss limit must be between 1% and 10%");
       return false;
    }
    
    // Check max trades per day
-   if (Parameters.MaxTradesPerDay < 1 || Parameters.MaxTradesPerDay > 20)
+   if (g_Parameters.MaxTradesPerDay < 1 || g_Parameters.MaxTradesPerDay > 20)
    {
       Print("Error: Max trades per day must be between 1 and 20");
       return false;

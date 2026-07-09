@@ -340,6 +340,7 @@ bool UpdateTradeContext()
    g_TradeContext.NewsActive = IsNewsActive();
    g_TradeContext.CurrentSpread = SymbolInfoDouble(_Symbol, SYMBOL_SPREAD);
    g_TradeContext.SpreadRatio = g_TradeContext.CurrentSpread / (g_Parameters.DefaultSL * _Point) * 100;
+   if (!UpdateATR()) g_TradeContext.AddError("ATR update failed");
    
    return true;
 }

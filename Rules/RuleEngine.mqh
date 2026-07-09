@@ -62,6 +62,26 @@ struct ExitDecision
 };
 
 //+------------------------------------------------------------------+
+//| Confidence Score Rule                                           |
+//+------------------------------------------------------------------+
+class CConfidenceScoreRule : public IRule
+{
+private:
+   int m_MinScore;
+public:
+   void CConfidenceScoreRule(int minScore = 75) { this.m_MinScore = minScore; }
+   bool Check() { return (g_TradeContext.TotalConfidenceScore >= this.m_MinScore); }
+   string Name() { return "ConfidenceScore"; }
+   double Weight() { return 10.0; }
+   string Reason()
+   {
+      if (g_TradeContext.TotalConfidenceScore >= this.m_MinScore)
+         return StringFormat("Confidence Score: %d/%d - PASSED", g_TradeContext.TotalConfidenceScore, this.m_MinScore);
+      return StringFormat("Confidence Score: %d/%d - FAILED", g_TradeContext.TotalConfidenceScore, this.m_MinScore);
+   }
+};
+
+//+------------------------------------------------------------------+
 //| Rule Engine - Evaluates All Entry/Exit Rules                   |
 //+------------------------------------------------------------------+
 

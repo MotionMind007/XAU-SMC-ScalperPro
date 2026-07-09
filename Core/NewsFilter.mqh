@@ -88,40 +88,9 @@ bool InitializeNewsFilter()
    return true;
 }
 
-//+------------------------------------------------------------------+
-//| Check if news is currently active                              |
-//+------------------------------------------------------------------+
 bool IsNewsActive()
 {
-   datetime now = TimeCurrent();
-   
-   // Only check every 5 minutes to save resources
-   if (now - g_LastNewsCheck < 300)
-      return g_NewsActive;
-   
-   g_LastNewsCheck = now;
-   g_NewsActive = false;
-   
-   // Check each high-impact event
-   for (int i = 0; i < ArraySize(g_HighImpactEvents); i++)
-   {
-      NewsEvent event = g_HighImpactEvents[i];
-      
-      if (event.EventTime == 0)
-         continue;  // Skip uninitialized events
-      
-      // Calculate impact window
-      datetime beforeWindow = event.EventTime - g_NewsBeforeMinutes * 60;
-      datetime afterWindow = event.EventTime + g_NewsAfterMinutes * 60;
-      
-      if (now >= beforeWindow && now <= afterWindow)
-      {
-         g_NewsActive = true;
-         break;
-      }
-   }
-   
-   return g_NewsActive;
+   return g_NewsService.IsNewsActive();
 }
 
 //+------------------------------------------------------------------+

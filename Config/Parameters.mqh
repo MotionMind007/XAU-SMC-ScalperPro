@@ -155,4 +155,12 @@ bool InitializeParameters()
    g_Parameters = Parameters();
    return true;
 }
+
+//+------------------------------------------------------------------+
+//| Accessor functions for Parameters (to avoid confusion)          |
+//+------------------------------------------------------------------+
+Parameters& GetParameters()
+{
+   return g_Parameters;
+}
 //+------------------------------------------------------------------+

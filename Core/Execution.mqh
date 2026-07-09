@@ -115,11 +115,11 @@ bool ExecuteOrder(int orderType, double lotSize, double price, double sl, double
       switch (orderType)
       {
          case ORDER_TYPE_BUY:
-            result = trade.Buy(lotSize, _Symbol, price, sl, tp, comment, Parameters.MagicNumber);
+            result = trade.Buy(lotSize, _Symbol, price, sl, tp, comment, g_Parameters.MagicNumber);
             break;
             
          case ORDER_TYPE_SELL:
-            result = trade.Sell(lotSize, _Symbol, price, sl, tp, comment, Parameters.MagicNumber);
+            result = trade.Sell(lotSize, _Symbol, price, sl, tp, comment, g_Parameters.MagicNumber);
             break;
       }
       
@@ -237,7 +237,7 @@ bool IsMarketNormal()
 {
    // Check spread
    double spread = SymbolInfoDouble(_Symbol, SYMBOL_SPREAD);
-   double maxSpread = Parameters.MaxSpreadRatio * Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT) / 100;
+   double maxSpread = g_Parameters.MaxSpreadRatio * g_Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT) / 100;
    
    if (spread > maxSpread)
    {

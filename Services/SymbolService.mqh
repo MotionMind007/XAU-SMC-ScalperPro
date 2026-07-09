@@ -207,20 +207,6 @@ public:
    }
    
    //+------------------------------------------------------------------+
-   //| Normalize lot size to symbol requirements                     |
-   //+------------------------------------------------------------------+
-   double NormalizeLot(double lotSize)
-   {
-      // Round to lot step
-      double normalized = MathRound(lotSize / this.m_LotStep) * this.m_LotStep;
-      
-      // Clamp to min/max
-      normalized = MathMax(this.m_MinLot, MathMin(this.m_MaxLot, normalized));
-      
-      return normalized;
-   }
-   
-   //+------------------------------------------------------------------+
    //| Get minimum lot size                                           |
    //+------------------------------------------------------------------+
    double GetMinLot()
