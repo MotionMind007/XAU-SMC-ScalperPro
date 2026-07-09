@@ -229,6 +229,20 @@ public:
    {
       return this.m_LotStep;
    }
+   
+   //+------------------------------------------------------------------+
+   //| Normalize lot size to symbol requirements                     |
+   //+------------------------------------------------------------------+
+   double NormalizeLot(double lotSize)
+   {
+      if (lotSize < this.m_MinLot)
+         return this.m_MinLot;
+      if (lotSize > this.m_MaxLot)
+         return this.m_MaxLot;
+      
+      // Round to lot step
+      return MathFloor(lotSize / this.m_LotStep) * this.m_LotStep;
+   }
 };
 
 //+------------------------------------------------------------------+

@@ -9,7 +9,7 @@
 #property strict
 
 #include "IRule.mqh"
-#include "DataCache.mqh"
+#include "..\\Core\\DataCache.mqh"
 
 //+------------------------------------------------------------------+
 //| Fair Value Gap (FVG) Filter Rule                                |

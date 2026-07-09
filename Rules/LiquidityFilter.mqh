@@ -9,7 +9,7 @@
 #property strict
 
 #include "IRule.mqh"
-#include "DataCache.mqh"
+#include "..\\Core\\DataCache.mqh"
 
 //+------------------------------------------------------------------+
 //| Liquidity Filter Rule                                           |
@@ -59,7 +59,8 @@ public:
       {
          LiquidityLevel sweep = sweeps[i];
          
-         if (sweep.Time >= recentLimit)
+         // Use Time2 (most recent time of the liquidity level) for recency check
+         if (sweep.Time2 >= recentLimit)
          {
             double currentAsk = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
             double currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -116,7 +117,7 @@ public:
          {
             LiquidityLevel sweep = sweeps[i];
             
-            if (sweep.Time >= recentLimit)
+            if (sweep.Time2 >= recentLimit)
             {
                double currentAsk = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
                double currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);

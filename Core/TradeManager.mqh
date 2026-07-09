@@ -78,23 +78,27 @@ void ManageSinglePosition(ulong ticket)
       return;
    }
    
-   // Check break-even
-   if (ShouldMoveToBreakEven())
-   {
-      MoveToBreakEven(ticket);
-   }
+   // Note: Break-even, trailing stop, and partial close are DISABLED per user preference
+   // "SL harus tetep stay, kalo kena yaudah. jangan ikutin harga"
+   // Uncomment below if needed in future:
    
-   // Check trailing stop
-   if (ShouldTrailStop())
-   {
-      ApplyTrailingStop(ticket);
-   }
+   // // Check break-even
+   // if (ShouldMoveToBreakEven())
+   // {
+   //    MoveToBreakEven(ticket);
+   // }
    
-   // Check partial close
-   if (ShouldPartialClose())
-   {
-      PartialClose(ticket);
-   }
+   // // Check trailing stop
+   // if (ShouldTrailStop())
+   // {
+   //    ApplyTrailingStop(ticket);
+   // }
+   
+   // // Check partial close
+   // if (ShouldPartialClose())
+   // {
+   //    PartialClose(ticket);
+   // }
 }
 
 //+------------------------------------------------------------------+

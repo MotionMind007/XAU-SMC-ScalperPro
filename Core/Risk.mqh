@@ -12,6 +12,7 @@
 #include "Config\Parameters.mqh"
 #include "TradeContext.mqh"
 #include "ATR.mqh"
+#include "Services\\SymbolService.mqh"
 
 //+------------------------------------------------------------------+
 //| Risk Calculation Structure                                      |
@@ -72,8 +73,12 @@ double CalculateRiskAmount(double lotSize, double stopLossPoints)
 //+------------------------------------------------------------------+
 double CalculateStopLossDistance()
 {
-   double atrBuffer = GetATRBuffer();
-   return g_Parameters.DefaultSL + atrBuffer;
+   // Get ATR buffer in price units and convert to points
+   double atrBufferPrice = GetATRBuffer();  // Returns price units
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double atrBufferPoints = atrBufferPrice / point;  // Convert to points
+   
+   return g_Parameters.DefaultSL + atrBufferPoints;
 }
 
 //+------------------------------------------------------------------+
@@ -110,18 +115,11 @@ RiskResult CalculateRiskReward()
 }
 
 //+------------------------------------------------------------------+
-//| Normalize lot size                                              |
+//| Normalize lot size - delegates to SymbolService                 |
 //+------------------------------------------------------------------+
 double NormalizeLot(double lotSize)
 {
-   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   
-   lotSize = MathRound(lotSize / lotStep) * lotStep;
-   lotSize = MathMax(minLot, MathMin(maxLot, lotSize));
-   
-   return lotSize;
+   return g_SymbolService.NormalizeLot(lotSize);
 }
 
 //+------------------------------------------------------------------+

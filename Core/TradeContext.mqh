@@ -15,7 +15,6 @@
 #include "Models\ScoreModel.mqh"
 #include "Config\Parameters.mqh"
 #include "Core\Session.mqh"
-#include "Core\NewsFilter.mqh"
 #include "Services\NewsService.mqh"
 
 //+------------------------------------------------------------------+
@@ -342,7 +341,100 @@ bool UpdateTradeContext()
    g_TradeContext.SpreadRatio = g_TradeContext.CurrentSpread / (g_Parameters.DefaultSL * _Point) * 100;
    if (!UpdateATR()) g_TradeContext.AddError("ATR update failed");
    
+   // Detect trend based on H1 structure
+   DetectTrend();
+   
    return true;
+}
+
+//+------------------------------------------------------------------+
+//| Detect trend based on H1 market structure (HH/HL or LH/LL)      |
+//+------------------------------------------------------------------+
+void DetectTrend()
+{
+   // Analyze H1 swing points for trend determination
+   // Bullish trend: Higher Highs (HH) and Higher Lows (HL)
+   // Bearish trend: Lower Highs (LH) and Lower Lows (LL)
+   
+   if (ArraySize(g_TradeContext.H1Rates) < 50)
+      return;
+   
+   // Find recent swing highs and lows on H1
+   double recentHighs[];
+   double recentLows[];
+   ArrayResize(recentHighs, 0);
+   ArrayResize(recentLows, 0);
+   
+   // Use a simple swing detection (fractal-like)
+   int lookback = 20;  // Look at last 20 H1 bars
+   int swingPeriod = 3; // 3 bars on each side for swing detection
+   
+   for (int i = swingPeriod; i < lookback - swingPeriod && i < ArraySize(g_TradeContext.H1Rates) - swingPeriod; i++)
+   {
+      // Check for swing high
+      bool isSwingHigh = true;
+      bool isSwingLow = true;
+      
+      for (int j = 1; j <= swingPeriod; j++)
+      {
+         if (g_TradeContext.H1Rates[i].high <= g_TradeContext.H1Rates[i-j].high ||
+             g_TradeContext.H1Rates[i].high <= g_TradeContext.H1Rates[i+j].high)
+            isSwingHigh = false;
+            
+         if (g_TradeContext.H1Rates[i].low >= g_TradeContext.H1Rates[i-j].low ||
+             g_TradeContext.H1Rates[i].low >= g_TradeContext.H1Rates[i+j].low)
+            isSwingLow = false;
+      }
+      
+      if (isSwingHigh)
+      {
+         ArrayResize(recentHighs, ArraySize(recentHighs) + 1);
+         recentHighs[ArraySize(recentHighs) - 1] = g_TradeContext.H1Rates[i].high;
+      }
+      
+      if (isSwingLow)
+      {
+         ArrayResize(recentLows, ArraySize(recentLows) + 1);
+         recentLows[ArraySize(recentLows) - 1] = g_TradeContext.H1Rates[i].low;
+      }
+   }
+   
+   // Need at least 2 swing highs and 2 swing lows to determine trend
+   if (ArraySize(recentHighs) < 2 || ArraySize(recentLows) < 2)
+   {
+      g_TradeContext.CurrentTrend = DIRECTION_NONE;
+      g_TradeContext.TrendScore = 0;
+      return;
+   }
+   
+   // Get the last 2 swing highs and lows
+   double lastHigh = recentHighs[ArraySize(recentHighs) - 1];
+   double prevHigh = recentHighs[ArraySize(recentHighs) - 2];
+   double lastLow = recentLows[ArraySize(recentLows) - 1];
+   double prevLow = recentLows[ArraySize(recentLows) - 2];
+   
+   // Check for bullish structure (HH + HL)
+   bool isBullish = (lastHigh > prevHigh) && (lastLow > prevLow);
+   
+   // Check for bearish structure (LH + LL)
+   bool isBearish = (lastHigh < prevHigh) && (lastLow < prevLow);
+   
+   if (isBullish && !isBearish)
+   {
+      g_TradeContext.CurrentTrend = DIRECTION_BUY;
+      g_TradeContext.TrendScore = 20;  // Award 20 points for trend detection
+   }
+   else if (isBearish && !isBullish)
+   {
+      g_TradeContext.CurrentTrend = DIRECTION_SELL;
+      g_TradeContext.TrendScore = 20;  // Award 20 points for trend detection
+   }
+   else
+   {
+      // No clear trend or conflicting signals
+      g_TradeContext.CurrentTrend = DIRECTION_NONE;
+      g_TradeContext.TrendScore = 0;
+   }
 }
 
 //+------------------------------------------------------------------+

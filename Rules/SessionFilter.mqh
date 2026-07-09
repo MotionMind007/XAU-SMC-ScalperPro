@@ -9,7 +9,7 @@
 #property strict
 
 #include "IRule.mqh"
-#include "Core\Session.mqh"
+#include "..\Core\Session.mqh"
 
 //+------------------------------------------------------------------+
 //| Session Filter Rule                                             |

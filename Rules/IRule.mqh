@@ -8,7 +8,7 @@
 #property version   "1.1"
 #property strict
 
-#include "TradeContext.mqh"
+#include "..\\Core\\TradeContext.mqh"
 
 //+------------------------------------------------------------------+
 //| Rule Result Structure                                            |

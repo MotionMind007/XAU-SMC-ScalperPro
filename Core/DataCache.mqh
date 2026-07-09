@@ -502,15 +502,21 @@ struct DataCache
    //+------------------------------------------------------------------+
    bool MitigatedOB(double price, bool bullish)
    {
-      Array<OrderBlock> obs = bullish ? this.FreshOB_Bullish : this.FreshOB_Bearish;
-      
-      for (int i = 0; i < obs.Total(); i++)
+      if (bullish)
       {
-         OrderBlock ob = obs[i];
-         if (bullish && price < ob.EndPrice)
-            ob.IsMitigated = true;
-         else if (!bullish && price > ob.StartPrice)
-            ob.IsMitigated = true;
+         for (int i = 0; i < this.FreshOB_Bullish.Total(); i++)
+         {
+            if (price < this.FreshOB_Bullish[i].EndPrice)
+               this.FreshOB_Bullish[i].IsMitigated = true;
+         }
+      }
+      else
+      {
+         for (int i = 0; i < this.FreshOB_Bearish.Total(); i++)
+         {
+            if (price > this.FreshOB_Bearish[i].StartPrice)
+               this.FreshOB_Bearish[i].IsMitigated = true;
+         }
       }
       
       return false;
@@ -547,7 +553,9 @@ struct DataCache
    //+------------------------------------------------------------------+
    Array<FVG> GetFreshFVGs(bool bullish)
    {
-      return bullish ? this.FreshFVG : this.FreshFVG;  // Return both, filter externally
+      // Filter by direction if needed
+      // For now, return all FVGs and let caller filter by Type
+      return this.FreshFVG;
    }
    
    //+------------------------------------------------------------------+

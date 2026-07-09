@@ -4,7 +4,7 @@
 //|                           Copyright 2026, MotionMind |
 //|                                       https://motionmind.store |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, MotionMind"
+#property copyright "Copyright 2026, MotionMind"
 #property version   "1.1"
 #property strict
 
@@ -111,6 +111,13 @@ int OnInit()
       return INIT_FAILED;
    }
    
+   // Validate risk parameters
+   if (!ValidateRiskParameters())
+   {
+      Print("Error: Invalid risk parameters");
+      return INIT_FAILED;
+   }
+   
    // Initialize trade manager
    if (!InitializeTradeManager())
    {
@@ -192,6 +199,9 @@ void OnTick()
    
    // Run main trading loop
    ExecuteTradingCycle();
+   
+   // Manage open positions (BE, trailing, partial close)
+   ManagePositions();
 }
 
 //+------------------------------------------------------------------+
@@ -292,24 +302,25 @@ double CalculateStopLoss()
 {
    double sl = 0.0;
    double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    
    if (g_TradeContext.CurrentTrend == DIRECTION_BUY)
    {
       // For buy: SL below nearest swing low
       double swingLow = GetNearestSwingLow(currentPrice);
       if (swingLow > 0)
-         sl = swingLow - GetATRBuffer() * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         sl = swingLow - GetATRBuffer();  // ATR buffer already in price units
       else
-         sl = currentPrice - g_Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         sl = currentPrice - g_Parameters.DefaultSL * point;
    }
    else if (g_TradeContext.CurrentTrend == DIRECTION_SELL)
    {
       // For sell: SL above nearest swing high
       double swingHigh = GetNearestSwingHigh(currentPrice);
       if (swingHigh > 0)
-         sl = swingHigh + GetATRBuffer() * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         sl = swingHigh + GetATRBuffer();  // ATR buffer already in price units
       else
-         sl = currentPrice + g_Parameters.DefaultSL * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         sl = currentPrice + g_Parameters.DefaultSL * point;
    }
    
    // Normalize SL
@@ -415,10 +426,6 @@ double NormalizePrice(double price)
 }
 
 //+------------------------------------------------------------------+
-//| Helper: Get ATR buffer                                          |
-//+------------------------------------------------------------------+
-double GetATRBuffer()
-{
-   return g_TradeContext.ATR_Buffer;
-}
+//| Note: GetATRBuffer() is defined in Core\ATR.mqh and returns      |
+//| g_ATR_Buffer * g_ATR_14. Use that function instead of redefining.|
 //+------------------------------------------------------------------+

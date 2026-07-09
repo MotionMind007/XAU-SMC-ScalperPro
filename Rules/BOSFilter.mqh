@@ -9,7 +9,7 @@
 #property strict
 
 #include "IRule.mqh"
-#include "DataCache.mqh"
+#include "..\\Core\\DataCache.mqh"
 
 //+------------------------------------------------------------------+
 //| Break of Structure (BOS) Filter Rule                            |
