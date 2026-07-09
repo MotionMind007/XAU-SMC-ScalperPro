@@ -1,0 +1,16 @@
+# Ignore markdown documentation files
+*.md
+
+# Ignore MetaTrader build artifacts
+*.ex5
+*.log
+
+# Ignore IDE files
+.kiro/
+.vscode/
+*.swp
+*.swo
+
+# Ignore user-specific config
+*.user
+*.cache
