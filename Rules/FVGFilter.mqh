@@ -111,6 +111,8 @@ public:
       if (currentTrend == 0)
          return "No valid trend direction - FAILED";
       
+      bool bullish = (currentTrend == DIRECTION_BUY);
+      
       Array<FVG> freshFVGs = g_DataCache.FreshFVG;
       
       if (freshFVGs.Total() > 0)

@@ -373,7 +373,7 @@ struct DataCache
                   LiquidityLevel sweep;
                   sweep.Type = LIQUIDITY_SWEEP_LOW;
                   sweep.Price = g_TradeContext.M15Rates[j+1].low;
-                  sweep.Time = g_TradeContext.M15Rates[j+1].time;
+                  sweep.Time1 = g_TradeContext.M15Rates[j+1].time;
                   this.LiquiditySweeps.Add(sweep);
                   
                   if (g_TradeContext.M15Rates[j+1].close > g_TradeContext.M15Rates[j+1].low)

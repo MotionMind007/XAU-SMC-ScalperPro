@@ -39,8 +39,22 @@ bool InitializeATR()
    g_ATR_Buffer = 1.5;
    g_ATR_Mode = ATR_NORMAL;
    g_ATR_LastUpdate = 0;
+   
+   // Initialize ATR indicator
+   int handle = iATR(_Symbol, PERIOD_M5, 14);
+   if (handle == INVALID_HANDLE)
+      return false;
+   
+   // Store handle for release on deinit
+   g_ATR_Handle = handle;
+   
    return true;
 }
+
+//+------------------------------------------------------------------+
+//| ATR handle for cleanup                                          |
+//+------------------------------------------------------------------+
+int g_ATR_Handle = INVALID_HANDLE;
 
 //+------------------------------------------------------------------+
 //| Calculate ATR for specified period                              |
@@ -48,12 +62,16 @@ bool InitializeATR()
 double CalculateATR(int period = 14)
 {
    double atrArray[];
-   int handle = iATR(_Symbol, PERIOD_M5, period);
    
-   if (handle == INVALID_HANDLE)
-      return 0.0;
+   // Use cached handle instead of creating new one
+   if (g_ATR_Handle == INVALID_HANDLE)
+   {
+      g_ATR_Handle = iATR(_Symbol, PERIOD_M5, period);
+      if (g_ATR_Handle == INVALID_HANDLE)
+         return 0.0;
+   }
    
-   if (CopyBuffer(handle, 0, 0, 1, atrArray) != 1)
+   if (CopyBuffer(g_ATR_Handle, 0, 0, 1, atrArray) != 1)
    {
       Print("Error copying ATR buffer: " + ErrorDescription(GetLastError()));
       return 0.0;
@@ -74,11 +92,21 @@ double CalculateATR(int period = 14)
 //+------------------------------------------------------------------+
 ATRMode DetermineATRMode()
 {
-   if (g_ATR_14 <= 5 * SymbolInfoDouble(_Symbol, SYMBOL_POINT))
+   // For XAUUSD M5, ATR(14) is typically 15-50+ (in price units)
+   // Use thresholds in price units, not points
+   double atrValue = g_ATR_14;
+   
+   // Thresholds in price units (approximately):
+   // LOW: ATR < 5.0 (very quiet, avoid trading)
+   // NORMAL: 5.0 <= ATR <= 15.0 (normal trading range)
+   // HIGH: 15.0 < ATR <= 30.0 (increased volatility)
+   // EXTREME: ATR > 30.0 (very volatile, avoid trading)
+   
+   if (atrValue < 5.0)
       return ATR_LOW;
-   else if (g_ATR_14 <= 15 * SymbolInfoDouble(_Symbol, SYMBOL_POINT))
+   else if (atrValue <= 15.0)
       return ATR_NORMAL;
-   else if (g_ATR_14 <= 30 * SymbolInfoDouble(_Symbol, SYMBOL_POINT))
+   else if (atrValue <= 30.0)
       return ATR_HIGH;
    else
       return ATR_EXTREME;
@@ -133,6 +161,18 @@ string GetATRModeString()
       case ATR_HIGH: return "HIGH";
       case ATR_EXTREME: return "EXTREME";
       default: return "UNKNOWN";
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Cleanup ATR handle on deinit                                    |
+//+------------------------------------------------------------------+
+void CleanupATR()
+{
+   if (g_ATR_Handle != INVALID_HANDLE)
+   {
+      IndicatorRelease(g_ATR_Handle);
+      g_ATR_Handle = INVALID_HANDLE;
    }
 }
 //+------------------------------------------------------------------+

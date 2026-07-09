@@ -152,6 +152,9 @@ void OnDeinit(const int reason)
    
    // Export metrics on close
    ExportMetrics();
+   
+   // Cleanup ATR handle
+   CleanupATR();
 }
 
 //+------------------------------------------------------------------+
@@ -172,6 +175,12 @@ void OnTick()
    {
       Logger_Log(ERROR, "Failed to update trade context");
       return;
+   }
+   
+   // Update ATR
+   if (!UpdateATR())
+   {
+      Logger_Log(WARNING, "Failed to update ATR");
    }
    
    // Update data cache if new candle
@@ -249,15 +258,18 @@ double CalculatePositionSize()
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * g_Parameters.RiskPercent / 100;
    
-   // Get ATR buffer for SL calculation
+   // Get ATR buffer for SL calculation (in price units)
    double atrBuffer = GetATRBuffer();
    
    // Calculate SL distance in points
-   double slDistance = g_Parameters.DefaultSL + atrBuffer;
+   // DefaultSL is in points, atrBuffer is in price units
+   // Convert atrBuffer to points: atrBuffer / _Point
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double slDistancePoints = g_Parameters.DefaultSL + (atrBuffer / point);
    
    // Calculate lot size
    double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double lotSize = riskAmount / (slDistance * tickValue);
+   double lotSize = riskAmount / (slDistancePoints * tickValue);
    
    // Normalize lot size
    lotSize = NormalizeLot(lotSize);
@@ -403,41 +415,10 @@ double NormalizePrice(double price)
 }
 
 //+------------------------------------------------------------------+
-//| Helper: Normalize lot size                                      |
-//+------------------------------------------------------------------+
-double NormalizeLot(double lotSize)
-{
-   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   
-   lotSize = MathRound(lotSize / lotStep) * lotStep;
-   lotSize = MathMax(minLot, MathMin(maxLot, lotSize));
-   
-   return lotSize;
-}
-
-//+------------------------------------------------------------------+
 //| Helper: Get ATR buffer                                          |
 //+------------------------------------------------------------------+
 double GetATRBuffer()
 {
    return g_TradeContext.ATR_Buffer;
-}
-
-//+------------------------------------------------------------------+
-//| Helper: Get nearest swing high                                  |
-//+------------------------------------------------------------------+
-double GetNearestSwingHigh(double price)
-{
-   return g_DataCache.GetNearestSwingHigh(price);
-}
-
-//+------------------------------------------------------------------+
-//| Helper: Get nearest swing low                                   |
-//+------------------------------------------------------------------+
-double GetNearestSwingLow(double price)
-{
-   return g_DataCache.GetNearestSwingLow(price);
 }
 //+------------------------------------------------------------------+
